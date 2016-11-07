@@ -6,7 +6,7 @@ struct GM_keyboard
 		pressed[256],
 		released[256];
 
-	void reset()
+	inline void reset()
 	{
 		//  лавиши и мышь
 		memset(pressed, false, 256);

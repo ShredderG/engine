@@ -1,6 +1,5 @@
 GM_OBJECT_o_world::GM_OBJECT_o_world(float GM_x, float GM_y, float GM_z)
 {
-GM_count++;
 o_world = this;
 priority = 0;
 solid = false;
@@ -27,22 +26,13 @@ mkrm(2, 9, 9, 13, 0, 1, 1, 2);
 
 }
 
-GM_OBJECT_o_world::~GM_OBJECT_o_world()
+void GM_OBJECT_o_world::GM_destructor()
 {
 if (o_world == this)
 {
-	if (GM_left)  if (GM_left->GM_id()  == GM_id()) o_world = (GM_OBJECT_o_world*) GM_left;
 	if (GM_right) if (GM_right->GM_id() == GM_id()) o_world = (GM_OBJECT_o_world*) GM_right;
-	if (o_world == this) o_world = (GM_OBJECT_o_world*) GM_id();
+	if (o_world == this) o_world = (GM_OBJECT_o_world*) GM_OBJECT_o_world::GM_id();
 }
-}
-
-void GM_OBJECT_o_world::destroy()
-{
-if (!GM_active) return;
-GM_count--;
-GM_active = false;
-
 }
 
 void GM_OBJECT_o_world::GM_step()
@@ -52,7 +42,7 @@ void GM_OBJECT_o_world::GM_step()
 
 void GM_OBJECT_o_world::GM_draw()
 {
-t_world.set();
+	texture = t_world;
 glBegin(GL_QUADS);
 glColor4f(1, 1, 1, 1);
 
@@ -76,10 +66,10 @@ for(int i = x1, ki = i - 1, ik = i + 1; i < x2; ki++, i = ik++)
 		if (flr != 0)
 		{
 			glColor4f(1, 1, 1, 1);
-			glTexCoord2f(GM_texture::current->x1[flr], GM_texture::current->y1[flr]); glVertex3f(i,  j,  xx[i][j]);
-			glTexCoord2f(GM_texture::current->x1[flr], GM_texture::current->y2[flr]); glVertex3f(ik, j,  yx[i][j]);
-			glTexCoord2f(GM_texture::current->x2[flr], GM_texture::current->y2[flr]); glVertex3f(ik, jk, yy[i][j]);
-			glTexCoord2f(GM_texture::current->x2[flr], GM_texture::current->y1[flr]); glVertex3f(i,  jk, xy[i][j]);
+			glTexCoord2f(texture.x1[flr], texture.y1[flr]); glVertex3f(i,  j,  xx[i][j]);
+			glTexCoord2f(texture.x1[flr], texture.y2[flr]); glVertex3f(ik, j,  yx[i][j]);
+			glTexCoord2f(texture.x2[flr], texture.y2[flr]); glVertex3f(ik, jk, yy[i][j]);
+			glTexCoord2f(texture.x2[flr], texture.y1[flr]); glVertex3f(i,  jk, xy[i][j]);
 		}
 		
 		// wall
@@ -98,7 +88,7 @@ for(int i = x1, ki = i - 1, ik = i + 1; i < x2; ki++, i = ik++)
 glEnd(); 
 }
 
-uint GM_OBJECT_o_world::GM_id()
+inline GM_objectId GM_OBJECT_o_world::GM_id()
 {
 return GM_OBJECT_ID_o_world;
 }

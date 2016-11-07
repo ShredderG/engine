@@ -1099,14 +1099,14 @@ GM_texture
 	t_hero(64, 64, 50, 50, &GM_data[768]),
 	notex(4, 4, 2, 2, &GM_data[13056]);
 
-void GM_loadTextures()
+inline void GM_loadTextures()
 {
 	t_world.load();
 	t_hero.load();
 	notex.load();
 }
 
-void GM_unloadTextures()
+inline void GM_unloadTextures()
 {
 	t_world.unload();
 	t_hero.unload();

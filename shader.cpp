@@ -3,7 +3,7 @@
 struct GM_shader
 {
 	uint program, program2, rbo, fbo, texture;
-	const static int SIZE = 2048;
+	static const int SIZE = 2048;
 
 	PFNGLCREATEPROGRAMPROC				gl_CreateProgram;
 	PFNGLDELETEPROGRAMPROC				gl_DeleteProgram;
@@ -46,7 +46,41 @@ struct GM_shader
 	{
 	}
 
-	void setUp()
+	// COMPILE SHADER
+	bool compile(uint type, uint &shader, const char *code, string text)
+	{
+		shader = gl_CreateShader(type);
+		gl_ShaderSource(shader, 1, &code, NULL);
+		gl_CompileShader(shader);
+
+		int done;
+		gl_GetShaderiv(shader, GL_COMPILE_STATUS, &done);
+
+		if (!done) showMessage(text + " шейдер - ошибка компиляции.");
+		return done;
+	}
+
+	// LINK SHADER
+	bool link(uint &program, const char *vertexCode, const char *fragmentCode)
+	{
+		// SHADERS
+		uint vertex, fragment;
+		if (!compile(GL_VERTEX_SHADER, vertex, vertexCode, "Вершинный")
+			|| !compile(GL_FRAGMENT_SHADER, fragment, fragmentCode, "Фрагментный"))
+			return false;
+
+		int done;
+		program = gl_CreateProgram();
+		gl_AttachShader(program, vertex);
+		gl_AttachShader(program, fragment);
+		gl_LinkProgram(program);
+		gl_GetProgramiv(program, GL_LINK_STATUS, &done);
+		if (!done) showMessage("Ошибка при линковке шейдера.");
+		return done;
+	}
+
+	// CREATE SHADER
+	inline void create()
 	{
 		gl_CreateProgram			= (PFNGLCREATEPROGRAMPROC)           wglGetProcAddress("glCreateProgram");
 		gl_DeleteProgram			= (PFNGLDELETEPROGRAMPROC)           wglGetProcAddress("glDeleteProgram");
@@ -169,39 +203,6 @@ struct GM_shader
 		gl_Uniform1i(gl_GetUniformLocation(program2, "colorBuffer"), 0);
 
 		gl_UseProgram(0);
-	}
-
-	// COMPILE SHADER
-	bool compile(uint type, uint &shader, const char *code, string text)
-	{
-		shader = gl_CreateShader(type);
-		gl_ShaderSource(shader, 1, &code, NULL);
-		gl_CompileShader(shader);
-
-		int done;
-		gl_GetShaderiv(shader, GL_COMPILE_STATUS, &done);
-
-		if (!done) showMessage(text + " шейдер - ошибка компиляции.");
-		return done;
-	}
-
-	// LINK SHADER
-	bool link(uint &program, const char *vertexCode, const char *fragmentCode)
-	{
-		// SHADERS
-		uint vertex, fragment;
-		if (!compile(GL_VERTEX_SHADER, vertex, vertexCode, "Вершинный")
-			|| !compile(GL_FRAGMENT_SHADER, fragment, fragmentCode, "Фрагментный"))
-			return false;
-
-		int done;
-		program = gl_CreateProgram();
-		gl_AttachShader(program, vertex);
-		gl_AttachShader(program, fragment);
-		gl_LinkProgram(program);
-		gl_GetProgramiv(program, GL_LINK_STATUS, &done);
-		if (!done) showMessage("Ошибка при линковке шейдера.");
-		return done;
 	}
 
 } shader;

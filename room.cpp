@@ -1,47 +1,41 @@
 struct GM_room
 {
 	void(*create)();
-	static bool transition;
+	bool transition;
 
 	GM_room() :
-		create(NULL)
+		create(NULL),
+		transition(false)
 	{
-		transition = false;
-	}
-	
-	GM_room(void(*function)())
-	{
-		create = function;
 	}
 
-	bool operator == (GM_room &rm)
+	bool operator == (void(*function)())
 	{
-		return create == rm.create;
+		return create == function;
 	}
 
-	bool operator != (GM_room &rm)
+	bool operator != (void(*function)())
 	{
-		return create != rm.create;
+		return create != function;
 	}
 
-	void set(GM_room &room_next)
+	void operator = (void(*function)())
 	{
 		transition = true;
-		room = room_next;
+		create = function;
 		for (GM_object *ptr = GM_list; ptr; ptr = ptr->GM_right)
 			if (!ptr->persistent) ptr->destroy();
 	}
-} room;
 
-bool GM_room::transition;
-
-bool GM_transition()
-{
-	if (GM_room::transition)
+	inline bool transite()
 	{
-		room.create();
-		GM_room::transition = false;
-		return true;
+		if (transition)
+		{
+			create();
+			transition = false;
+			return true;
+		}
+		return false;
 	}
-	return false;
-}
+
+} room;

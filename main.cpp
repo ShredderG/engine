@@ -26,7 +26,6 @@ using namespace std;
 #include "files/textures.cpp"
 #include "window.cpp"
 #include "shader.cpp"
-#include "object.cpp"
 #include "files/functions.h"
 #include "files/objects.cpp"
 #include "room.cpp"
@@ -43,12 +42,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		GM_WIDTH, GM_HEIGHT)) return 0;
 
 	GM_loadTextures();
-	shader.setUp();
-	room.set(r_start);
+	shader.create();
+	room = r_start;
 
 	// Variables
 	float timeStep = 1000.0 / fps;
-	int timeNow = clock(), timeSleep, timeStart = timeNow, timeEnd = timeStart + 1000, step = 0;
+	int timeNow = clock(), timeSleep, timeStart = timeNow, timeEnd = timeStart + 1000, frame = 0;
 	MSG msg;
 
 	// Main cycle
@@ -61,10 +60,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		GM_step();
-		if (!GM_transition())
+		if (!room.transite())
 			GM_draw();
 
-		if ((timeSleep = timeStart + timeStep * ++step - (timeNow = clock())) > 0)
+		if ((timeSleep = timeStart + timeStep * ++frame - (timeNow = clock())) > 0)
 		{
 			timeNow += timeSleep;
 			Sleep(timeSleep);
@@ -72,11 +71,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		if (timeEnd <= timeNow)
 		{
-			fps = step;
-			step = 0;
+			fps = frame;
+			frame = 0;
 			timeStart = timeNow;
 			timeEnd = timeNow + 1000;
-			//window.setTitle(str(fps));
 		}
 	}
 

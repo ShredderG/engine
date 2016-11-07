@@ -1,6 +1,5 @@
 GM_OBJECT_o_hero::GM_OBJECT_o_hero(float GM_x, float GM_y, float GM_z)
 {
-GM_count++;
 o_hero = this;
 priority = 1;
 solid = false;
@@ -14,7 +13,7 @@ direction = direction_need = 0;
 rotatingMethod = 0;
 }
 
-GM_OBJECT_o_hero::~GM_OBJECT_o_hero()
+void GM_OBJECT_o_hero::GM_destructor()
 {
 if (o_hero == this)
 {
@@ -23,15 +22,6 @@ if (o_hero == this)
 	if (o_hero == this) o_hero = (GM_OBJECT_o_hero*) GM_id();
 }
 }
-
-void GM_OBJECT_o_hero::destroy()
-{
-if (!GM_active) return;
-GM_count--;
-GM_active = false;
-
-}
-
 void GM_OBJECT_o_hero::GM_step()
 {
 if (rotatingMethod == 0)
@@ -116,16 +106,16 @@ glScalef(scale, scale, scale);
 
 glColor3f(1, 1, 1);
 
-t_hero.set();
+texture = t_hero;
 glBegin(GL_QUADS);
-glTexCoord2f(t_hero.x2[0], t_hero.y2[0]); glVertex3f(x - stepX(0.5, direction + 90), y - stepY(0.5, direction + 90), z);
-glTexCoord2f(t_hero.x2[0], t_hero.y1[0]); glVertex3f(x - stepX(0.5, direction + 90), y - stepY(0.5, direction + 90), z + 1);
-glTexCoord2f(t_hero.x1[0], t_hero.y1[0]); glVertex3f(x + stepX(0.5, direction + 90), y + stepY(0.5, direction + 90), z + 1);
-glTexCoord2f(t_hero.x1[0], t_hero.y2[0]); glVertex3f(x + stepX(0.5, direction + 90), y + stepY(0.5, direction + 90), z);
+glTexCoord2f(texture.x2[0], texture.y2[0]); glVertex3f(x - stepX(0.5, direction + 90), y - stepY(0.5, direction + 90), z);
+glTexCoord2f(texture.x2[0], texture.y1[0]); glVertex3f(x - stepX(0.5, direction + 90), y - stepY(0.5, direction + 90), z + 1);
+glTexCoord2f(texture.x1[0], texture.y1[0]); glVertex3f(x + stepX(0.5, direction + 90), y + stepY(0.5, direction + 90), z + 1);
+glTexCoord2f(texture.x1[0], texture.y2[0]); glVertex3f(x + stepX(0.5, direction + 90), y + stepY(0.5, direction + 90), z);
 glEnd(); 
 }
 
-uint GM_OBJECT_o_hero::GM_id()
+inline GM_objectId GM_OBJECT_o_hero::GM_id()
 {
 return GM_OBJECT_ID_o_hero;
 }

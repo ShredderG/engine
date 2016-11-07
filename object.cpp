@@ -1,19 +1,13 @@
 // Конструкция with
-#define with(object)                                 \
-for (GM_OBJECT_##object *object = ::object;          \
-	object > (GM_OBJECT_##object*)0x0000FFFF;        \
-	object = (GM_OBJECT_##object*)object->GM_right)  \
-	if (object->GM_id() != ::object->GM_id()) break; \
+#define with(object)                                                     \
+for (GM_OBJECT_##object *object = ::object;                              \
+	object > (GM_OBJECT_##object*)0x0000FFFF;                            \
+	object = (GM_OBJECT_##object*)object->GM_right)                      \
+	if (object->GM_id() != ::object->GM_OBJECT_##object::GM_id()) break; \
 	else if (object->GM_active)
 
 // Существует ли экземпляр объекта
-#define objectExists(object) (objectCount(object) > 0)
-
-// Кол-во экземпляров объекта
-#define objectCount(object) GM_OBJECT_ ## object::GM_count
-
-// На всякий
-#define repeat(count) for(int GM_index = 0; GM_index < count; GM_index++)
+#define objectExists(object) (object > (GM_object*)0x0000FFFF)
 
 struct GM_object
 {
@@ -23,7 +17,11 @@ struct GM_object
 	int priority;
 
 	// constructor
-	GM_object() : GM_active(true)
+	GM_object() :
+		GM_active(true),
+		solid(false),
+		persistent(false),
+		priority(0)
 	{
 	}
 
@@ -34,15 +32,20 @@ struct GM_object
 		if (GM_right) GM_right->GM_left = GM_left;
 	}
 
+	inline void destroy()
+	{
+		GM_active = false;
+	}
+
 	// insert object to the object list
-	void GM_insert(GM_object *ptr)
+	inline void GM_insert(GM_object *ptr)
 	{
 		GM_object *before = NULL, *after = ptr;
 
-		if (after < (GM_object*)0x0000FFFF)
-			after = GM_list;
-		else
+		if (objectExists(after))
 			before = after->GM_left;
+		else
+			after = GM_list;
 
 		while (after)
 		{
@@ -62,22 +65,22 @@ struct GM_object
 	}
 
 	// Виртуальные функции
-	virtual void destroy() = 0;
+	virtual void GM_destructor() = 0;
 	virtual void GM_step() = 0;
 	virtual void GM_draw() = 0;
-	virtual uint GM_id() = 0;
+	virtual inline GM_objectId GM_id() = 0;
 
 } *GM_list = NULL;
 
 // Delete everything
-void GM_deleteObjects()
+inline void GM_deleteObjects()
 {
 	for (GM_object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL)
 		delete ptr;
 }
 
 // Global step
-void GM_step()
+inline void GM_step()
 {
 	mouse.update(window.hWnd, window.width, window.height);
 
@@ -85,14 +88,18 @@ void GM_step()
 		if (ptr->GM_active) ptr->GM_step();
 
 	for (GM_object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL)
-		if (!ptr->GM_active) delete ptr;
+		if (!ptr->GM_active)
+		{
+			ptr->GM_destructor();
+			delete ptr;
+		}
 
 	keyboard.reset();
 	mouse.reset();
 }
 
 // Global draw
-void GM_draw()
+inline void GM_draw()
 {
 	shader.gl_UseProgram(shader.program);
 	shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, shader.fbo);

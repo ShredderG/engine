@@ -49,7 +49,7 @@ struct GM_mouse
 		while (ShowCursor(visible) >= 0);
 	}
 
-	void update(HWND hWnd, short width, short height)
+	inline void update(HWND hWnd, short width, short height)
 	{
 		POINT point;
 		GetCursorPos(&point);
@@ -83,7 +83,7 @@ struct GM_mouse
 		}
 	}
 
-	void reset()
+	inline void reset()
 	{
 		check[MOUSE_WHEEL_UP] = false;
 		check[MOUSE_WHEEL_DOWN] = false;
