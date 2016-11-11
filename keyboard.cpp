@@ -1,17 +1,24 @@
-struct GM_keyboard
+struct Keyboard
 {
-	uchar last;
+	static const int KEYS_COUNT = 256;
+	uchar lastKeyPressed;
 	bool
-		check[256],
-		pressed[256],
-		released[256];
+		isReleased[KEYS_COUNT],
+		isPressed[KEYS_COUNT],
+		isHeld[KEYS_COUNT];
+
+	Keyboard()
+	{
+		for (int i = 0; i < KEYS_COUNT; i++) {
+			isReleased[i] = isPressed[i] = isHeld[i] = false;
+		}
+		lastKeyPressed = 0;
+	}
 
 	inline void reset()
 	{
-		//  лавиши и мышь
-		memset(pressed, false, 256);
-		memset(released, false, 256);
-
-		last = 0;
+		memset(isReleased, false, KEYS_COUNT);
+		memset(isPressed,  false, KEYS_COUNT);
+		lastKeyPressed = 0;
 	}
 } keyboard;

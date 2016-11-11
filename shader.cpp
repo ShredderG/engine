@@ -1,6 +1,6 @@
 #define CONVERT_TO_STRING(A) #A
 
-struct GM_shader
+struct Shader
 {
 	uint program, program2, rbo, fbo, texture;
 	static const int SIZE = 2048;
@@ -41,10 +41,6 @@ struct GM_shader
 	PFNGLBINDFRAMEBUFFERPROC			gl_BindFramebuffer;
 	PFNGLFRAMEBUFFERTEXTURE2DPROC		gl_FramebufferTexture2D;
 	PFNGLCHECKFRAMEBUFFERSTATUSPROC		gl_CheckFramebufferStatus;
-
-	GM_shader()
-	{
-	}
 
 	// COMPILE SHADER
 	bool compile(uint type, uint &shader, const char *code, string text)

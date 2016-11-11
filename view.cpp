@@ -1,8 +1,8 @@
-struct GM_view
+struct View
 {
 	float x, y, z, vx, vy, vz, distance;
 
-	GM_view() :
+	View() :
 		x(0), y(0), z(0), vx(0), vy(0), vz(0), distance(512)
 	{
 	}
@@ -60,5 +60,4 @@ struct GM_view
 		glLoadIdentity();
 		update();
 	}
-
 } view;

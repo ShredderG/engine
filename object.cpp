@@ -4,29 +4,29 @@ for (GM_OBJECT_##object *object = ::object;                              \
 	object > (GM_OBJECT_##object*)0x0000FFFF;                            \
 	object = (GM_OBJECT_##object*)object->GM_right)                      \
 	if (object->GM_id() != ::object->GM_OBJECT_##object::GM_id()) break; \
-	else if (object->GM_active)
+	else if (object->isActive)
 
 // —уществует ли экземпл€р объекта
-#define objectExists(object) (object > (GM_object*)0x0000FFFF)
+#define objectExists(object) (object > (Object*)0x0000FFFF)
 
-struct GM_object
+struct Object
 {
-	GM_object *GM_left, *GM_right;
+	Object *GM_left, *GM_right;
 	float x, y, z;
-	bool GM_active, solid, persistent;
-	int priority;
+	bool isActive, isSolid, isPersistent;
+	int zIndex;
 
 	// constructor
-	GM_object() :
-		GM_active(true),
-		solid(false),
-		persistent(false),
-		priority(0)
+	Object() :
+		isActive(true),
+		isSolid(false),
+		isPersistent(false),
+		zIndex(0)
 	{
 	}
 
 	// destructor
-	~GM_object()
+	~Object()
 	{
 		(GM_left ? GM_left->GM_right : GM_list) = GM_right;
 		if (GM_right) GM_right->GM_left = GM_left;
@@ -34,23 +34,23 @@ struct GM_object
 
 	inline void destroy()
 	{
-		GM_active = false;
+		isActive = false;
 	}
 
 	// insert object to the object list
-	inline void GM_insert(GM_object *ptr)
+	inline void GM_insert(Object *ptr)
 	{
-		GM_object *before = NULL, *after = ptr;
+		Object *before = NULL, *after = ptr;
 
-		if (objectExists(after))
+		if (objectExists(after)) {
 			before = after->GM_left;
-		else
+		}
+		else {
 			after = GM_list;
+		}
 
-		while (after)
-		{
-			if (priority < after->priority)
-			{
+		while (after) {
+			if (zIndex < after->zIndex) {
 				before = after;
 				after = after->GM_right;
 			}
@@ -68,14 +68,14 @@ struct GM_object
 	virtual void GM_destructor() = 0;
 	virtual void GM_step() = 0;
 	virtual void GM_draw() = 0;
-	virtual inline GM_objectId GM_id() = 0;
+	virtual inline ObjectId GM_id() = 0;
 
 } *GM_list = NULL;
 
 // Delete everything
 inline void GM_deleteObjects()
 {
-	for (GM_object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL)
+	for (Object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL)
 		delete ptr;
 }
 
@@ -84,15 +84,18 @@ inline void GM_step()
 {
 	mouse.update(window.hWnd, window.width, window.height);
 
-	for (GM_object *ptr = GM_list; ptr; ptr = ptr->GM_right)
-		if (ptr->GM_active) ptr->GM_step();
+	for (Object *ptr = GM_list; ptr; ptr = ptr->GM_right) {
+		if (ptr->isActive) {
+			ptr->GM_step();
+		}
+	}
 
-	for (GM_object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL)
-		if (!ptr->GM_active)
-		{
+	for (Object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL) {
+		if (!ptr->isActive) {
 			ptr->GM_destructor();
 			delete ptr;
 		}
+	}
 
 	keyboard.reset();
 	mouse.reset();
@@ -105,8 +108,9 @@ inline void GM_draw()
 	shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, shader.fbo);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for (GM_object *ptr = GM_list; ptr; ptr = ptr->GM_right)
+	for (Object *ptr = GM_list; ptr; ptr = ptr->GM_right) {
 		ptr->GM_draw();
+	}
 
 	shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

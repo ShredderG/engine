@@ -1094,19 +1094,19 @@ uchar GM_data[] =
 	255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
-GM_texture
+Texture
 	t_world(16, 16, 8, 8, &GM_data[0]),
 	t_hero(64, 64, 50, 50, &GM_data[768]),
 	notex(4, 4, 2, 2, &GM_data[13056]);
 
-inline void GM_loadTextures()
+void GM_loadTextures()
 {
 	t_world.load();
 	t_hero.load();
 	notex.load();
 }
 
-inline void GM_unloadTextures()
+void GM_unloadTextures()
 {
 	t_world.unload();
 	t_hero.unload();

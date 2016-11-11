@@ -1,12 +1,10 @@
 GM_OBJECT_o_world::GM_OBJECT_o_world(float GM_x, float GM_y, float GM_z)
 {
-o_world = this;
-priority = 0;
-solid = false;
-persistent = false;
 x = GM_x;
 y = GM_y;
 z = GM_z;
+o_world = this;
+isPersistent = false;
 for(int i = 0; i < size; i++)
 {
 	for(int j = 0; j < size; j++)
@@ -28,9 +26,10 @@ mkrm(2, 9, 9, 13, 0, 1, 1, 2);
 
 void GM_OBJECT_o_world::GM_destructor()
 {
+
 if (o_world == this)
 {
-	if (GM_right) if (GM_right->GM_id() == GM_id()) o_world = (GM_OBJECT_o_world*) GM_right;
+	if (GM_right) if (GM_right->GM_id() == GM_OBJECT_o_world::GM_id()) o_world = (GM_OBJECT_o_world*) GM_right;
 	if (o_world == this) o_world = (GM_OBJECT_o_world*) GM_OBJECT_o_world::GM_id();
 }
 }
@@ -42,7 +41,7 @@ void GM_OBJECT_o_world::GM_step()
 
 void GM_OBJECT_o_world::GM_draw()
 {
-	texture = t_world;
+texture = t_world;
 glBegin(GL_QUADS);
 glColor4f(1, 1, 1, 1);
 
@@ -88,7 +87,7 @@ for(int i = x1, ki = i - 1, ik = i + 1; i < x2; ki++, i = ik++)
 glEnd(); 
 }
 
-inline GM_objectId GM_OBJECT_o_world::GM_id()
+ObjectId GM_OBJECT_o_world::GM_id()
 {
 return GM_OBJECT_ID_o_world;
 }

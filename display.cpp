@@ -1,8 +1,8 @@
-struct GM_display
+struct Display
 {
 	short width, height;
 
-	GM_display() :
+	Display() :
 		width(GetSystemMetrics(SM_CXSCREEN)),
 		height(GetSystemMetrics(SM_CYSCREEN))
 	{

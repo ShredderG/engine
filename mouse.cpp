@@ -1,91 +1,88 @@
-// Мышь
-enum
+// Mouse buttons
+enum MouseButton
 {
-	MOUSE_LEFT,
-	MOUSE_RIGHT,
-	MOUSE_MIDDLE,
-	MOUSE_WHEEL_UP,
-	MOUSE_WHEEL_DOWN
+	MOUSE_LEFT       = 0,
+	MOUSE_RIGHT      = 1,
+	MOUSE_WHEEL      = 3,
+	MOUSE_MIDDLE     = 3,
+	MOUSE_WHEEL_UP   = 0,
+	MOUSE_WHEEL_DOWN = 1
 };
 
-struct GM_mouse
+// Mouse
+struct Mouse
 {
-	short x, y;
+private:
+	POINT point_;
 
+public:
+	short x, y;
 	bool
-		visible,
-		outside,
-		pressed[3],
-		released[3],
-		checkPrevious[3],
-		check[5];
+		isReleased[4],
+		isPressed[4],
+		isHeld[4],
+		isWheelRotated[2],
+		isVisible,
+		isOutside;
 	
-	GM_mouse() : outside(false)
+	Mouse() : isOutside(false)
 	{
-		for (uchar i = 0; i < 3; i++)
-			check[i] = false;
+		//inirt nouse
+		for (uchar i = 0; i < 3; i++) {
+			isHeld[i] = false;
+		}
 	}
 
+	// Move mouse
 	void move(short GM_x, short GM_y)
 	{
-		POINT point;
-		GetCursorPos(&point);
-		x = point.x - x;
-		y = point.y - y;
-		if (bool(GetActiveWindow())) SetCursorPos(x + GM_x, y + GM_y);
-		x = GM_x;
-		y = GM_y;
+		GetCursorPos(&point_);
+		x = point_.x - x;
+		y = point_.y - y;
+		if (bool(GetActiveWindow())) {
+			SetCursorPos(x + GM_x, y + GM_y);
+		}
 	}
 
+	// Show mouse
 	void show()
 	{
-		visible = true;
-		while(ShowCursor(visible) < 0);
+		while (ShowCursor(true) < 0);
+		isVisible = true;
 	}
 
+	// Hide mouse
 	void hide()
 	{
-		visible = false;
-		while (ShowCursor(visible) >= 0);
+		while (ShowCursor(false) >= 0);
+		isVisible = false;
 	}
 
+	// Update mouse buttons states
 	inline void update(HWND hWnd, short width, short height)
 	{
-		POINT point;
-		GetCursorPos(&point);
-		ScreenToClient(hWnd, &point);
-		x = point.x;
-		y = point.y;
-
-		for (uchar i = 0; i < 3; i++)
-		{
-			checkPrevious[i] = check[i];
-			check[i] = GetAsyncKeyState(i == 2 ? 4 : i + 1);
-			pressed[i] = check[i] && !checkPrevious[i];
-			released[i] = !check[i] && checkPrevious[i];
-		}
-
-		if (!visible)
-		{
-			if (!outside)
-			if (x < 0 || y < 0 || x >= width || y >= height)
-			{
-				ShowCursor(true);
-				outside = true;
+		// Show or hide cursor
+		if (!isVisible) {
+			if (isOutside) {
+				if (x >= 0 && y >= 0 && x < width && y < height) {
+					ShowCursor(false);
+					isOutside = false;
+				}
 			}
-
-			if (outside)
-			if (x >= 0 && y >= 0 && x < width && y < height)
-			{
-				ShowCursor(false);
-				outside = false;
+			else {
+				if (x < 0 || y < 0 || x >= width || y >= height) {
+					ShowCursor(true);
+					isOutside = true;
+				}
 			}
 		}
 	}
 
+	// Unset mouse wheel status
 	inline void reset()
 	{
-		check[MOUSE_WHEEL_UP] = false;
-		check[MOUSE_WHEEL_DOWN] = false;
+		isWheelRotated[MOUSE_WHEEL_UP] = isWheelRotated[MOUSE_WHEEL_DOWN] = false;
+		memset(isPressed,  false, 4);
+		memset(isReleased, false, 4);
 	}
 } mouse;

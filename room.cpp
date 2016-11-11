@@ -1,41 +1,46 @@
-struct GM_room
+struct Room
 {
-	void(*create)();
-	bool transition;
+private:
+	void(*create_)();
+	bool transition_;
 
-	GM_room() :
-		create(NULL),
-		transition(false)
+public:
+	Room() :
+		create_(NULL),
+		transition_(false)
 	{
 	}
 
 	bool operator == (void(*function)())
 	{
-		return create == function;
+		return create_ == function;
 	}
 
 	bool operator != (void(*function)())
 	{
-		return create != function;
+		return create_ != function;
 	}
 
+	// Change current room
 	void operator = (void(*function)())
 	{
-		transition = true;
-		create = function;
-		for (GM_object *ptr = GM_list; ptr; ptr = ptr->GM_right)
-			if (!ptr->persistent) ptr->destroy();
+		transition_ = true;
+		create_ = function;
+		for (Object *ptr = GM_list; ptr; ptr = ptr->GM_right) {
+			if (!ptr->isPersistent) {
+				ptr->destroy();
+			}
+		}
 	}
 
-	inline bool transite()
+	// Do transition to room if needed
+	inline bool doTransition()
 	{
-		if (transition)
-		{
-			create();
-			transition = false;
+		if (transition_) {
+			create_();
+			transition_ = false;
 			return true;
 		}
 		return false;
 	}
-
 } room;

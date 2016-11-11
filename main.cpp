@@ -26,55 +26,60 @@ using namespace std;
 #include "files/textures.cpp"
 #include "window.cpp"
 #include "shader.cpp"
-#include "files/functions.h"
 #include "files/objects.cpp"
 #include "room.cpp"
 #include "files/rooms.cpp"
-#include "files/functions.cpp"
 
 // Main function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	// Creating window
+	// Create window
 	if (!window.create(GM_TITLE, GM_FULL,
-		(display.width - GM_WIDTH) / 2,
+		(display.width  - GM_WIDTH)  / 2,
 		(display.height - GM_HEIGHT) / 2,
-		GM_WIDTH, GM_HEIGHT)) return 0;
+		GM_WIDTH, GM_HEIGHT))
+		return 0;
 
+	// Load textures, shader, room
 	GM_loadTextures();
 	shader.create();
 	room = r_start;
 
 	// Variables
-	float timeStep = 1000.0 / fps;
-	int timeNow = clock(), timeSleep, timeStart = timeNow, timeEnd = timeStart + 1000, frame = 0;
+	const float timeFrame = 1000.0 / GM_FPS;
+	int frame       = 0,
+		timeCurrent = clock(),
+		timeStart   = timeCurrent,
+		timeEnd     = timeStart + 1000,
+		timeSleep;
 	MSG msg;
 
 	// Main cycle
-	while (GM_game)
-	{
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-		{
+	while (GM_game) {
+		// Retrieve message
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 
+		// Do frame tick
 		GM_step();
-		if (!room.transite())
+		if (!room.doTransition()) {
 			GM_draw();
+		}
 
-		if ((timeSleep = timeStart + timeStep * ++frame - (timeNow = clock())) > 0)
-		{
-			timeNow += timeSleep;
+		// Wait some mseconds if needed
+		if ((timeSleep = timeStart + timeFrame * ++frame - (timeCurrent = clock())) > 0) {
+			timeCurrent += timeSleep;
 			Sleep(timeSleep);
 		}
 
-		if (timeEnd <= timeNow)
-		{
-			fps = frame;
-			frame = 0;
-			timeStart = timeNow;
-			timeEnd = timeNow + 1000;
+		// Check FPS
+		if (timeEnd <= timeCurrent) {
+			fps       = frame;
+			frame     = 0;
+			timeStart = timeCurrent;
+			timeEnd   = timeCurrent + 1000;
 		}
 	}
 

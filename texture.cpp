@@ -1,25 +1,25 @@
-struct GM_texture
+struct Texture
 {
-	uint id;
-	uchar *data;
+private:
+	uchar *data_;
+	uint id_;
+
+public:
 	ushort count, width, height, xSize, ySize;
 	float *x1, *x2, *y1, *y2;
 
-	GM_texture()
+	Texture()
 	{
 	}
 
-	GM_texture(ushort w, ushort h, ushort x, ushort y, uchar *bytes) :
-		x1(NULL), y1(NULL), x2(NULL), y2(NULL),
+	Texture(ushort w, ushort h, ushort x, ushort y, uchar *bytes) :
 		width(w), height(h), xSize(x), ySize(y),
-		data(bytes)
+		data_(bytes)
 	{
 	}
 
 	void load()
 	{
-		if (x1) return;
-
 		// texture coordinates
 		int xCount = width / xSize;
 		int yCount = height / ySize;
@@ -44,7 +44,7 @@ struct GM_texture
 		}
 
 		// texture creating
-		glGenTextures(1, &id);
+		glGenTextures(1, &id_);
 
 		uint length = width * height * 4;
 		uchar *alpha = new uchar[length];
@@ -52,13 +52,13 @@ struct GM_texture
 		// colors - rgba
 		for (uint i = 0; i<length; i += 4)
 		{
-			alpha[i] = *data++;
-			alpha[i + 1] = *data++;
-			alpha[i + 2] = *data++;
-			alpha[i + 3] = alpha[i] == 255 && !alpha[i + 1] && alpha[i + 2] == 255 ? 0 : 255;
+			alpha[i] = *data_++;
+			alpha[i + 1] = *data_++;
+			alpha[i + 2] = *data_++;
+			alpha[i + 3] = alpha[i] == 255 && alpha[i + 1] == 0 && alpha[i + 2] == 255 ? 0 : 255;
 		}
 
-		glBindTexture(GL_TEXTURE_2D, id);
+		glBindTexture(GL_TEXTURE_2D, id_);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, alpha);
@@ -68,37 +68,35 @@ struct GM_texture
 
 	void unload()
 	{
-		if (!x1) return;
-		x1 = x2 = y1 = y2 = NULL;
-		glDeleteTextures(1, &id);
-		delete x1;
-		delete y1;
-		delete x2;
-		delete y2;
+		glDeleteTextures(1, &id_);
+		delete[] x1,y2;
+		delete[] y1;
+		delete[] x2;
+		delete[] y2;
 	}
 
-	bool operator == (GM_texture &tex)
+	bool operator == (Texture &tex)
 	{
-		return id == tex.id;
+		return id_ == tex.id_;
 	}
 
-	bool operator != (GM_texture &tex)
+	bool operator != (Texture &tex)
 	{
-		return id != tex.id;
+		return id_ != tex.id_;
 	}
 
-	void operator = (GM_texture &tex)
+	void operator = (Texture &tex)
 	{
-		if (id != tex.id)
+		if (id_ != tex.id_)
 		{
-			id = tex.id;
+			id_ = tex.id_;
 			x1 = tex.x1;
 			x2 = tex.x2;
 			y1 = tex.y1;
 			y2 = tex.y2;
 			width = tex.width;
 			height = tex.height;
-			glBindTexture(GL_TEXTURE_2D, id);
+			glBindTexture(GL_TEXTURE_2D, id_);
 		}
 	}
 } texture;
