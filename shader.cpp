@@ -52,7 +52,9 @@ struct Shader
 		int done;
 		gl_GetShaderiv(shader, GL_COMPILE_STATUS, &done);
 
-		if (!done) showMessage(text + " шейдер - ошибка компил€ции.");
+		if (!done) {
+			showMessage(text + " шейдер - ошибка компил€ции.");
+		}
 		return done;
 	}
 
@@ -62,8 +64,9 @@ struct Shader
 		// SHADERS
 		uint vertex, fragment;
 		if (!compile(GL_VERTEX_SHADER, vertex, vertexCode, "¬ершинный")
-			|| !compile(GL_FRAGMENT_SHADER, fragment, fragmentCode, "‘рагментный"))
+			|| !compile(GL_FRAGMENT_SHADER, fragment, fragmentCode, "‘рагментный")) {
 			return false;
+		}
 
 		int done;
 		program = gl_CreateProgram();
@@ -71,12 +74,14 @@ struct Shader
 		gl_AttachShader(program, fragment);
 		gl_LinkProgram(program);
 		gl_GetProgramiv(program, GL_LINK_STATUS, &done);
-		if (!done) showMessage("ќшибка при линковке шейдера.");
+		if (!done) {
+			showMessage("ќшибка при линковке шейдера.");
+		}
 		return done;
 	}
 
 	// CREATE SHADER
-	inline void create()
+	void create()
 	{
 		gl_CreateProgram			= (PFNGLCREATEPROGRAMPROC)           wglGetProcAddress("glCreateProgram");
 		gl_DeleteProgram			= (PFNGLDELETEPROGRAMPROC)           wglGetProcAddress("glDeleteProgram");
@@ -141,21 +146,21 @@ struct Shader
 		// ¬≈–Ў»ЌЌџ…
 		const char *vertexCode2 = CONVERT_TO_STRING(
 			void main(void)
-		{
-			gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-			gl_FrontColor = gl_Color;
-			gl_TexCoord[0] = gl_MultiTexCoord0;
-		}
+			{
+				gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+				gl_FrontColor = gl_Color;
+				gl_TexCoord[0] = gl_MultiTexCoord0;
+			}
 		);
 
 		// ѕ» —≈Ћ№Ќџ…
 		const char *fragmentCode2 = CONVERT_TO_STRING(
 			uniform sampler2D colorBuffer;
 			uniform sampler2D depthBuffer;
-		void main(void)
-		{
-			gl_FragColor = texture2D(colorBuffer, gl_TexCoord[0].xy - mod(gl_TexCoord[0].xy, 6.0 / 2048.0)) * gl_Color;
-		}
+			void main(void)
+			{
+				gl_FragColor = texture2D(colorBuffer, gl_TexCoord[0].xy - mod(gl_TexCoord[0].xy, 6.0 / 2048.0)) * gl_Color;
+			}
 		);
 
 		// SHADERS
@@ -181,8 +186,7 @@ struct Shader
 		gl_FramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rbo, 0);
 
 		GLenum status = gl_CheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (status != GL_FRAMEBUFFER_COMPLETE)
-		{
+		if (status != GL_FRAMEBUFFER_COMPLETE) {
 			showMessage("FBO error");
 		}
 		

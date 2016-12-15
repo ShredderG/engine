@@ -9,13 +9,12 @@ struct Keyboard
 
 	Keyboard()
 	{
-		for (int i = 0; i < KEYS_COUNT; i++) {
-			isReleased[i] = isPressed[i] = isHeld[i] = false;
-		}
-		lastKeyPressed = 0;
+		memset(isHeld, false, KEYS_COUNT);
+		reset();
 	}
 
-	inline void reset()
+	// Reset keyboard status
+	void reset()
 	{
 		memset(isReleased, false, KEYS_COUNT);
 		memset(isPressed,  false, KEYS_COUNT);

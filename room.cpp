@@ -1,46 +1,40 @@
 struct Room
 {
 private:
-	void(*create_)();
-	bool transition_;
+	void(*function_)()  = nullptr;
+	bool hasTransition_ = false;
 
 public:
-	Room() :
-		create_(NULL),
-		transition_(false)
+	// Do transition to room if needed
+	bool doTransition()
 	{
-	}
-
-	bool operator == (void(*function)())
-	{
-		return create_ == function;
-	}
-
-	bool operator != (void(*function)())
-	{
-		return create_ != function;
+		if (hasTransition_) {
+			function_();
+			hasTransition_ = false;
+			return true;
+		}
+		return false;
 	}
 
 	// Change current room
 	void operator = (void(*function)())
 	{
-		transition_ = true;
-		create_ = function;
-		for (Object *ptr = GM_list; ptr; ptr = ptr->GM_right) {
+		hasTransition_ = true;
+		function_ = function;
+		for (Engine::Object *ptr = Engine::objectList; ptr; ptr = ptr->GAME_right) {
 			if (!ptr->isPersistent) {
 				ptr->destroy();
 			}
 		}
 	}
 
-	// Do transition to room if needed
-	inline bool doTransition()
+	bool operator == (void(*function)())
 	{
-		if (transition_) {
-			create_();
-			transition_ = false;
-			return true;
-		}
-		return false;
+		return function_ == function;
+	}
+
+	bool operator != (void(*function)())
+	{
+		return function_ != function;
 	}
 } room;

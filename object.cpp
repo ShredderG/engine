@@ -1,144 +1,135 @@
-// Конструкция with
-#define with(object)                                                     \
-for (GM_OBJECT_##object *object = ::object;                              \
-	object > (GM_OBJECT_##object*)0x0000FFFF;                            \
-	object = (GM_OBJECT_##object*)object->GM_right)                      \
-	if (object->GM_id() != ::object->GM_OBJECT_##object::GM_id()) break; \
+// With macros
+#define with(object)                                                    \
+for (GAME_OBJECT_##object *object = ::object;                           \
+	object > (GAME_OBJECT_##object*)0x0000FFFF;                         \
+	object = (GAME_OBJECT_##object*)object->GAME_right)                 \
+	if (object->GAME_id() != ::object->GAME_OBJECT_##object::GAME_id()) \
+		break;                                                          \
 	else if (object->isActive)
 
 // Существует ли экземпляр объекта
-#define objectExists(object) (object > (Object*)0x0000FFFF)
+#define objectExists(object) (object > (Engine::Object*)0x0000FFFF)
 
-struct Object
+namespace Engine
 {
-	Object *GM_left, *GM_right;
-	float x, y, z;
-	bool isActive, isSolid, isPersistent;
-	int zIndex;
-
-	// constructor
-	Object() :
-		isActive(true),
-		isSolid(false),
-		isPersistent(false),
-		zIndex(0)
+	struct Object
 	{
-	}
+		Object *GAME_left, *GAME_right;
+		float x, y, z;
+		bool isActive, isSolid, isPersistent;
+		int zIndex;
 
-	// destructor
-	~Object()
-	{
-		(GM_left ? GM_left->GM_right : GM_list) = GM_right;
-		if (GM_right) GM_right->GM_left = GM_left;
-	}
-
-	inline void destroy()
-	{
-		isActive = false;
-	}
-
-	// insert object to the object list
-	inline void GM_insert(Object *ptr)
-	{
-		Object *before = NULL, *after = ptr;
-
-		if (objectExists(after)) {
-			before = after->GM_left;
-		}
-		else {
-			after = GM_list;
+		// constructor
+		Object() :
+			isActive(true),
+			isSolid(false),
+			isPersistent(false),
+			zIndex(0)
+		{
 		}
 
-		while (after) {
-			if (zIndex < after->zIndex) {
-				before = after;
-				after = after->GM_right;
+		// destructor
+		~Object()
+		{
+			(GAME_left ? GAME_left->GAME_right : objectList) = GAME_right;
+			if (GAME_right) GAME_right->GAME_left = GAME_left;
+		}
+
+		inline void destroy()
+		{
+			isActive = false;
+		}
+
+		// insert object to the object list
+		void GAME_insert(Object *ptr)
+		{
+			GAME_left = nullptr;
+			GAME_right = ptr;
+
+			if (objectExists(GAME_right)) {
+				GAME_left = GAME_right->GAME_left;
 			}
-			else break;
+			else {
+				GAME_right = objectList;
+			}
+
+			while (GAME_right) {
+				if (zIndex < GAME_right->zIndex) {
+					GAME_left  = GAME_right;
+					GAME_right = GAME_right->GAME_right;
+				}
+				else break;
+			}
+
+			(GAME_left ? GAME_left->GAME_right : objectList) = this;
+			if (GAME_right) GAME_right->GAME_left = this;
 		}
 
-		GM_left = before;
-		GM_right = after;
+		// Виртуальные функции
+		virtual void     GAME_kill()     = 0;
+		virtual void     GAME_step()     = 0;
+		virtual void     GAME_draw()     = 0;
+		virtual ObjectId GAME_id() const = 0;
 
-		(GM_left ? GM_left->GM_right : GM_list) = this;
-		if (GM_right) GM_right->GM_left = this;
-	}
+	} *objectList = nullptr;
 
-	// Виртуальные функции
-	virtual void GM_destructor() = 0;
-	virtual void GM_step() = 0;
-	virtual void GM_draw() = 0;
-	virtual inline ObjectId GM_id() = 0;
-
-} *GM_list = NULL;
-
-// Delete everything
-inline void GM_deleteObjects()
-{
-	for (Object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL)
-		delete ptr;
-}
-
-// Global step
-inline void GM_step()
-{
-	mouse.update(window.hWnd, window.width, window.height);
-
-	for (Object *ptr = GM_list; ptr; ptr = ptr->GM_right) {
-		if (ptr->isActive) {
-			ptr->GM_step();
-		}
-	}
-
-	for (Object *ptr = GM_list, *ptr_next = ptr ? ptr->GM_right : NULL; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GM_right : NULL) {
-		if (!ptr->isActive) {
-			ptr->GM_destructor();
+	// Delete everything
+	void deleteObjects()
+	{
+		for (Object *ptr = objectList, *ptr_next = ptr ? ptr->GAME_right : nullptr; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GAME_right : nullptr) {
+			ptr->GAME_kill();
 			delete ptr;
 		}
 	}
 
-	keyboard.reset();
-	mouse.reset();
-}
+	// Global step
+	void step()
+	{
+		for (Object *ptr = objectList; ptr; ptr = ptr->GAME_right) {
+			if (ptr->isActive) {
+				ptr->GAME_step();
+			}
+		}
 
-// Global draw
-inline void GM_draw()
-{
-	shader.gl_UseProgram(shader.program);
-	shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, shader.fbo);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		for (Object *ptr = objectList, *ptr_next = ptr ? ptr->GAME_right : nullptr; ptr; ptr = ptr_next, ptr_next = ptr ? ptr->GAME_right : nullptr) {
+			if (!ptr->isActive) {
+				ptr->GAME_kill();
+				delete ptr;
+			}
+		}
 
-	for (Object *ptr = GM_list; ptr; ptr = ptr->GM_right) {
-		ptr->GM_draw();
+		keyboard.reset();
+		mouse.reset();
 	}
 
-	shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	view.set2d(0,0,window.width, window.height);
-	shader.gl_UseProgram(shader.program2);
+	// Global draw
+	void draw()
+	{
+		shader.gl_UseProgram(shader.program);
+		shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, shader.fbo);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glBindTexture(GL_TEXTURE_2D, shader.texture);
-	glBegin(GL_QUADS);
-	glColor4f(1, 1, 1, 1);
-	glTexCoord2f(0, window.height / (float)shader.SIZE); glVertex2f(0, 0);
-	glTexCoord2f(0, 0); glVertex2f(0, window.height);
-	glTexCoord2f(window.width / (float)shader.SIZE, 0); glVertex2f(window.width, window.height);
-	glTexCoord2f(window.width / (float)shader.SIZE, window.height / (float)shader.SIZE); glVertex2f(window.width, 0);
-	glEnd();
+		for (Object *ptr = objectList; ptr; ptr = ptr->GAME_right) {
+			ptr->GAME_draw();
+		}
 
-	/*
-	shader.gl_UseProgram(0);
-	glBindTexture(GL_TEXTURE_2D, shader.rbo);
-	glBegin(GL_QUADS);
-	glColor4f(1, 1, 1, 1);
-	glTexCoord2f(0, window.height / (float)shader.SIZE); glVertex2f(0, 0);
-	glTexCoord2f(0, 0); glVertex2f(0, window.height / 2);
-	glTexCoord2f(window.width / (float)shader.SIZE, 0); glVertex2f(window.width / 2, window.height / 2);
-	glTexCoord2f(window.width / (float)shader.SIZE, window.height / (float)shader.SIZE); glVertex2f(window.width / 2, 0);
-	glEnd();
-	*/
+		shader.gl_UseProgram(shader.program2);
+		shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	view.set3d();
+		camera.set2d(0, 0, window.width, window.height);
 
-	SwapBuffers(window.hDC);
-}
+		glBindTexture(GL_TEXTURE_2D, shader.texture);
+		glBegin(GL_QUADS);
+		glColor4f(1, 1, 1, 1);
+		glTexCoord2f(0, window.height / (float)shader.SIZE); glVertex2f(0, 0);
+		glTexCoord2f(0, 0); glVertex2f(0, window.height);
+		glTexCoord2f(window.width / (float)shader.SIZE, 0); glVertex2f(window.width, window.height);
+		glTexCoord2f(window.width / (float)shader.SIZE, window.height / (float)shader.SIZE); glVertex2f(window.width, 0);
+		glEnd();
+
+		camera.set3d();
+
+		SwapBuffers(window.hDC);
+	}
+};

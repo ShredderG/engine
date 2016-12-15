@@ -5,15 +5,16 @@ private:
 	uint id_;
 
 public:
-	ushort count, width, height, xSize, ySize;
+	ushort width, height, imageWidth, imageHeight, imagesCount;
 	float *x1, *x2, *y1, *y2;
 
-	Texture()
-	{
-	}
+	Texture() = default;
 
-	Texture(ushort w, ushort h, ushort x, ushort y, uchar *bytes) :
-		width(w), height(h), xSize(x), ySize(y),
+	Texture(ushort widthNew, ushort heightNew, ushort imageWidthNew, ushort imageHeightNew, uchar *bytes) :
+		width(widthNew),
+		height(heightNew),
+		imageWidth(imageWidthNew),
+		imageHeight(imageHeightNew),
 		data_(bytes)
 	{
 	}
@@ -21,43 +22,37 @@ public:
 	void load()
 	{
 		// texture coordinates
-		int xCount = width / xSize;
-		int yCount = height / ySize;
-		count = xCount * yCount;
+		int length = width * height * 4,
+			xCount = width  / imageWidth,
+			yCount = height / imageHeight;
+		imagesCount = xCount * yCount;
 
-		x1 = new float[count];
-		y1 = new float[count];
-		x2 = new float[count];
-		y2 = new float[count];
+		x1 = new float[imagesCount];
+		y1 = new float[imagesCount];
+		x2 = new float[imagesCount];
+		y2 = new float[imagesCount];
 
 		int index = 0;
-		for (int j = 0; j<yCount; j++)
-		{
-			for (int i = 0; i<xCount; i++)
-			{
-				x1[index] = (float)i * xSize / width;
-				x2[index] = (float)(i + 1) * xSize / width;
-				y1[index] = 1 - (float)j * ySize / height;
-				y2[index] = 1 - (float)(j + 1) * ySize / height;
+		for (int j = 0; j < yCount; j++) {
+			for (int i = 0; i < xCount; i++) {
+				x1[index] = (float)i * imageWidth / width;
+				x2[index] = (float)(i + 1) * imageWidth / width;
+				y1[index] = 1.0 - (float)j * imageHeight / height;
+				y2[index] = 1.0 - (float)(j + 1) * imageHeight / height;
 				index++;
 			}
 		}
 
 		// texture creating
-		glGenTextures(1, &id_);
-
-		uint length = width * height * 4;
 		uchar *alpha = new uchar[length];
-
-		// colors - rgba
-		for (uint i = 0; i<length; i += 4)
-		{
-			alpha[i] = *data_++;
+		for (uint i = 0; i < length; i += 4) {
+			alpha[i]     = *data_++;
 			alpha[i + 1] = *data_++;
 			alpha[i + 2] = *data_++;
 			alpha[i + 3] = alpha[i] == 255 && alpha[i + 1] == 0 && alpha[i + 2] == 255 ? 0 : 255;
 		}
 
+		glGenTextures(1, &id_);
 		glBindTexture(GL_TEXTURE_2D, id_);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -69,7 +64,7 @@ public:
 	void unload()
 	{
 		glDeleteTextures(1, &id_);
-		delete[] x1,y2;
+		delete[] x1;
 		delete[] y1;
 		delete[] x2;
 		delete[] y2;
@@ -87,15 +82,17 @@ public:
 
 	void operator = (Texture &tex)
 	{
-		if (id_ != tex.id_)
-		{
+		if (id_ != tex.id_) {
 			id_ = tex.id_;
 			x1 = tex.x1;
 			x2 = tex.x2;
 			y1 = tex.y1;
 			y2 = tex.y2;
-			width = tex.width;
+			width  = tex.width;
 			height = tex.height;
+			imagesCount = tex.imagesCount;
+			imageWidth  = tex.imageWidth;
+			imageHeight = tex.imageHeight;
 			glBindTexture(GL_TEXTURE_2D, id_);
 		}
 	}

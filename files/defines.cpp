@@ -1,16 +1,15 @@
-typedef unsigned char  uchar;
-typedef unsigned short ushort;
-typedef unsigned int   uint;
+#define GAME_TITLE    "title"
+#define GAME_WIDTH    800
+#define GAME_HEIGHT   600
+#define GAME_FPS      60
+#define GAME_FULL     false
+#define GAME_MAXIMIZE false
+#define GAME_MINIMIZE false
+#define GAME_MOUSE    true
+#define GAME_NOBORDER false
 
-#define GM_TITLE    "title"
-#define GM_WIDTH    800
-#define GM_HEIGHT   600
-#define GM_FPS      60
-#define GM_FULL     false
-#define GM_MAXIMIZE true
-#define GM_MINIMIZE true
-#define GM_MOUSE    true
-#define GM_NOBORDER false
-
-uint fps = GM_FPS;
-bool GM_game = true;
+namespace Engine
+{
+    uchar fps = GAME_FPS;
+    bool game = true;
+}

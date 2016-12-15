@@ -1,11 +1,13 @@
 // No warnings
 #define _CRT_SECURE_NO_WARNINGS
 
-// OpenGL
+// Libraries
 #pragma comment (lib, "opengl32.lib")
 #pragma comment (lib, "glu32.lib")
+#pragma comment (lib, "wsock32.lib")
 
 // Includes
+#include <winsock.h>
 #include <windows.h>
 #include <math.h>
 #include <time.h>
@@ -15,38 +17,46 @@
 #include <gl/glu.h>
 using namespace std;
 
+// Extra types
+typedef unsigned char  uchar;
+typedef unsigned short ushort;
+typedef unsigned int   uint;
+
 // Engine
 #include "files/defines.cpp"
-#include "other.cpp"
+#include "functions.cpp"
+#include "winsock.cpp"
 #include "keyboard.cpp"
 #include "mouse.cpp"
-#include "view.cpp"
+#include "camera.cpp"
 #include "display.cpp"
 #include "texture.cpp"
-#include "files/textures.cpp"
 #include "window.cpp"
 #include "shader.cpp"
+#include "files/textures.cpp"
 #include "files/objects.cpp"
-#include "room.cpp"
-#include "files/rooms.cpp"
 
 // Main function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	// Create window
-	if (!window.create(GM_TITLE, GM_FULL,
-		(display.width  - GM_WIDTH)  / 2,
-		(display.height - GM_HEIGHT) / 2,
-		GM_WIDTH, GM_HEIGHT))
+	if (!window.create(GAME_TITLE, GAME_FULL,
+		(display.width  - GAME_WIDTH)  / 2,
+		(display.height - GAME_HEIGHT) / 2,
+		GAME_WIDTH, GAME_HEIGHT)) {
 		return 0;
+	}
+
+	// Seed random generator
+	srand((unsigned)time(nullptr));
 
 	// Load textures, shader, room
-	GM_loadTextures();
+	Engine::loadTextures();
 	shader.create();
 	room = r_start;
 
 	// Variables
-	const float timeFrame = 1000.0 / GM_FPS;
+	constexpr float timeForFrame = 1000.0 / GAME_FPS;
 	int frame       = 0,
 		timeCurrent = clock(),
 		timeStart   = timeCurrent,
@@ -55,7 +65,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	MSG msg;
 
 	// Main cycle
-	while (GM_game) {
+	while (Engine::game) {
 		// Retrieve message
 		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
@@ -63,29 +73,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// Do frame tick
-		GM_step();
+		Engine::step();
 		if (!room.doTransition()) {
-			GM_draw();
+			Engine::draw();
 		}
 
 		// Wait some mseconds if needed
-		if ((timeSleep = timeStart + timeFrame * ++frame - (timeCurrent = clock())) > 0) {
+		if ((timeSleep = timeStart + timeForFrame * ++frame - (timeCurrent = clock())) > 0) {
 			timeCurrent += timeSleep;
 			Sleep(timeSleep);
 		}
 
 		// Check FPS
 		if (timeEnd <= timeCurrent) {
-			fps       = frame;
-			frame     = 0;
-			timeStart = timeCurrent;
-			timeEnd   = timeCurrent + 1000;
+			Engine::fps = frame;
+			frame       = 0;
+			timeStart   = timeCurrent;
+			timeEnd     = timeCurrent + 1000;
 		}
 	}
 
 	// App end
-	GM_deleteObjects();
-	GM_unloadTextures();
+	Engine::deleteObjects();
+	Engine::unloadTextures();
 	window.destroy();
 	return 0;
 }

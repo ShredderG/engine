@@ -1,13 +1,10 @@
 // Прототип WndProc
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-#define IDI_ICON1 101
 
 struct Window
 {
-	friend void GM_step();
-	friend void GM_draw();
-
-private:
+	//friend void Engine::draw();
+//private:
 	HGLRC     hRC;       // Постоянный контекст рендеринга
 	HDC       hDC;       // Приватный контекст устройства GDI
 	HWND      hWnd;      // Здесь будет хранится дескриптор окна
@@ -26,22 +23,20 @@ public:
 	{
 	}
 
-	void move(ushort GM_x, ushort GM_y)
+	void move(ushort xNew, ushort yNew)
 	{
-		x = GM_x;
-		y = GM_y;
-		SetWindowPos(hWnd, hWnd, x, y, width, height, SWP_NOZORDER | SWP_NOSIZE);
+		SetWindowPos(hWnd, hWnd, x = xNew, y = yNew, width, height, SWP_NOZORDER | SWP_NOSIZE);
 	}
 
-	void resize(ushort GM_width, ushort GM_height)
+	void resize(ushort widthNew, ushort heightNew)
 	{
 		RECT client, window;
 		GetClientRect(hWnd, &client);
 		GetWindowRect(hWnd, &window);
 
 		SetWindowPos(hWnd, hWnd, x, y,
-			GM_width  + window.right  - window.left - client.right,
-			GM_height + window.bottom - window.top  - client.bottom,
+			widthNew  + window.right  - window.left - client.right,
+			heightNew + window.bottom - window.top  - client.bottom,
 			SWP_NOZORDER | SWP_NOMOVE);
 	}
 
@@ -52,7 +47,7 @@ public:
 		glLoadIdentity();
 
 		// Вычисление соотношения геометрических размеров для окна
-		gluPerspective(60.0, (float)width / height, 0.5, view.distance);
+		gluPerspective(camera.fov, (float)width / height, camera.zNear, camera.zFar);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 	}
@@ -75,14 +70,6 @@ public:
 		glDepthFunc(GL_LEQUAL);
 		glClearDepth(1.0);
 		glEnable(GL_BLEND);
-
-		srand((unsigned)time(NULL));
-		if (GM_MOUSE) {
-			mouse.show();
-		}
-		else {
-			mouse.hide();
-		}
 	}
 
 	void changeFullscreen()
@@ -92,19 +79,16 @@ public:
 		create(title, !isFullscreen, x, y, width, height);
 	}
 
-	void setTitle(string GM_title)
+	void setTitle(string titleNew)
 	{
-		title = GM_title;
+		title = titleNew;
 		SetWindowText(hWnd, title.c_str());
 	}
 
 	void destroy()
 	{
 		if (isFullscreen) {
-			short w = width, h = height;
 			ChangeDisplaySettings(NULL, 0);
-			width = w;
-			height = h;
 		}
 
 		if (hRC) {
@@ -115,7 +99,6 @@ public:
 				showMessage("Release Rendering Context Failed.");
 			}
 		}
-
 		if (hDC && !ReleaseDC(hWnd, hDC)) {
 			showMessage("Release Device Context Failed.");
 		}
@@ -126,24 +109,22 @@ public:
 			showMessage("Could Not Unregister Class.");
 		}
 
-		hRC = NULL;
-		hDC = NULL;
-		hWnd = NULL;
+		hRC       = NULL;
+		hDC       = NULL;
+		hWnd      = NULL;
 		hInstance = NULL;
 	}
 
-	bool create(string GM_title, bool GM_fullscreen, short GM_x, short GM_y, short GM_width, short GM_height)
+	bool create(string GAME_title, bool GAME_fullscreen, short GAME_x, short GAME_y, short GAME_width, short GAME_height)
 	{
-		title = GM_title;
-		isFullscreen = GM_fullscreen;
-		x = GM_x;
-		y = GM_y;
-		width = GM_width;
-		height = GM_height;
+		title = GAME_title;
+		isFullscreen = GAME_fullscreen;
+		x = GAME_x;
+		y = GAME_y;
+		width  = GAME_width;
+		height = GAME_height;
 		if (isFullscreen) {
 			x = y = 0;
-			width  = GetSystemMetrics(SM_CXSCREEN);
-			height = GetSystemMetrics(SM_CYSCREEN);
 		}
 
 		GLuint PixelFormat; // Хранит результат после поиска
@@ -151,11 +132,7 @@ public:
 		DWORD dwExStyle;    // Расширенный стиль окна
 		DWORD dwStyle;      // Обычный стиль окна
 
-		RECT WindowRect;            // Grabs Rectangle Upper Left / Lower Right Values
-		WindowRect.left   = 0;      // Установить левую составляющую в 0
-		WindowRect.right  = width;  // Установить правую составляющую в Width
-		WindowRect.top    = 0;      // Установить верхнюю составляющую в 0
-		WindowRect.bottom = height; // Установить нижнюю составляющую в Height
+		RECT WindowRect = { 0, 0, width, height }; // Grabs Rectangle Upper Left / Lower Right Values
 
 		hInstance = GetModuleHandle(NULL);                          // Считаем дескриптор нашего приложения
 		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;              // Перерисуем и создаём скрытый DC
@@ -163,7 +140,7 @@ public:
 		wc.cbClsExtra = 0;                                          // Нет дополнительной информации для окна
 		wc.cbWndExtra = 0;                                          // Нет дополнительной информации для окна
 		wc.hInstance = hInstance;                                   // Устанавливаем дескриптор
-		wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1)); // Загружаем иконку по умолчанию
+		wc.hIcon = LoadIcon(hInstance, IDI_WINLOGO);                // Загружаем иконку по умолчанию
 		wc.hCursor = LoadCursor(NULL, IDC_ARROW);                   // Загружаем указатель мышки
 		wc.hbrBackground = NULL;                                    // Фон не требуется для GL
 		wc.lpszMenuName = NULL;                                     // Меню в окне не будет
@@ -174,13 +151,9 @@ public:
 			showMessage("Failed To Register The Window Class.");
 			return false;
 		}
-
-		dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE; // Расширенный стиль окна
-		dwStyle   = WS_OVERLAPPEDWINDOW;                // Обычный стиль окна
-
+		
 		// Полноэкранный режим?
-		if (isFullscreen)
-		{
+		if (isFullscreen) {
 			DEVMODE dmScreenSettings;                                                 // Режим устройства
 			memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));                   // Очистка для хранения установок
 			dmScreenSettings.dmSize = sizeof(dmScreenSettings);                       // Размер структуры Devmode
@@ -195,21 +168,22 @@ public:
 			}
 		}
 
-		if (isFullscreen || GM_NOBORDER) {
+		if (isFullscreen || GAME_NOBORDER) {
 			dwExStyle = WS_EX_APPWINDOW; // Расширенный стиль окна
-			dwStyle = WS_POPUP;          // Обычный стиль окна
+			dwStyle   = WS_POPUP;        // Обычный стиль окна
 		}
 		else {
 			dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;   // Расширенный стиль окна
-			dwStyle = WS_OVERLAPPEDWINDOW;
-			if (!GM_MINIMIZE) dwStyle &= ~WS_MINIMIZEBOX;
-			if (!GM_MAXIMIZE) dwStyle &= ~WS_MAXIMIZEBOX;
+			dwStyle   = WS_OVERLAPPEDWINDOW;
+			if (!GAME_MINIMIZE) dwStyle &= ~WS_MINIMIZEBOX;
+			if (!GAME_MAXIMIZE) dwStyle &= ~WS_MAXIMIZEBOX;
 		}
 
 		// Подбирает окну подходящие размеры
 		AdjustWindowRectEx(&WindowRect, dwStyle, false, dwExStyle);
 
-		if (!(hWnd = CreateWindowEx(dwExStyle,  // Расширенный стиль для окна
+		if (!(hWnd = CreateWindowEx(
+			dwExStyle,                          // Расширенный стиль для окна
 			"OpenGL",                           // Имя класса
 			title.c_str(),                      // Заголовок окна
 			WS_CLIPSIBLINGS |                   // Требуемый стиль для окна
@@ -264,98 +238,96 @@ public:
 		destroy();
 		return false;
 	}
-
 } window;
 
+// Window procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	// Проверка сообщения для окна
+	// Check message
 	switch (uMsg)
 	{
-		// Mouse move
-	case WM_MOUSEMOVE:
-		mouse.x = LOWORD(lParam);
-		mouse.y = HIWORD(lParam);
-		return 0;
-
-		// Крутим колесико мыши
-	case WM_MOUSEWHEEL:
-		mouse.isWheelRotated[HIWORD(wParam) == WHEEL_DELTA ? MOUSE_WHEEL_UP : MOUSE_WHEEL_DOWN] = true;
-		return 0;
-
-		// Мышь
-	case WM_LBUTTONDOWN:
-		mouse.isHeld[VK_LBUTTON] = mouse.isPressed[VK_LBUTTON] = true;
-		return 0;
-
-		// Мышь
-	case WM_RBUTTONDOWN:
-		mouse.isHeld[VK_RBUTTON] = mouse.isPressed[VK_RBUTTON] = true;
-		return 0;
-
-		// Мышь
-	case WM_MBUTTONDOWN:
-		mouse.isHeld[VK_MBUTTON] = mouse.isPressed[VK_MBUTTON] = true;
-		return 0;
-
-		// Мышь
-	case WM_LBUTTONUP:
-		mouse.isHeld[VK_LBUTTON] = false;
-		mouse.isReleased[VK_LBUTTON] = true;
-		return 0;
-
-		// Мышь
-	case WM_RBUTTONUP:
-		mouse.isHeld[VK_RBUTTON] = false;
-		mouse.isReleased[VK_RBUTTON] = true;
-		return 0;
-
-		// Мышь
-	case WM_MBUTTONUP:
-		mouse.isHeld[VK_MBUTTON] = false;
-		mouse.isReleased[VK_MBUTTON] = true;
-		return 0;
-
-		// Проверка сообщения активности окна
-		// Проверить состояние минимизации
-	case WM_ACTIVATE:
-		window.hasFocus = !HIWORD(wParam);
-		return 0;
-
-		// Перехватываем системную команду
-		// Останавливаем системный вызов (скринсейвер или сбережение энергии)
-	case WM_SYSCOMMAND:
-		if (wParam == SC_SCREENSAVE || wParam == SC_MONITORPOWER)
-			return 0;
-		break;
-
-		// Мы получили сообщение о закрытии?
-	case WM_CLOSE:
-		GM_game = false;
-		return 0;
-
-		// Была ли нажата кнопка?
+		// Key pressed
 	case WM_KEYDOWN:
 		keyboard.isHeld[keyboard.lastKeyPressed = wParam] = keyboard.isPressed[wParam] = true;
 		return 0;
 
-		// Была ли отпущена клавиша?
+		// Key released
 	case WM_KEYUP:
 		keyboard.isHeld[wParam] = false;
 		keyboard.isReleased[wParam] = true;
 		return 0;
 
-		// Изменены размеры OpenGL окна
+		// Mouse moved
+	case WM_MOUSEMOVE:
+		mouse.x = LOWORD(lParam);
+		mouse.y = HIWORD(lParam);
+		return 0;
+
+		// Mouse wheel rotated
+	case WM_MOUSEWHEEL:
+		mouse.isWheelRotated[HIWORD(wParam) == WHEEL_DELTA ? MOUSE_WHEEL_UP : MOUSE_WHEEL_DOWN] = true;
+		return 0;
+
+		// Left mouse button pressed
+	case WM_LBUTTONDOWN:
+		mouse.isHeld[MOUSE_LEFT] = mouse.isPressed[MOUSE_LEFT] = true;
+		return 0;
+
+		// Right mouse button pressed
+	case WM_RBUTTONDOWN:
+		mouse.isHeld[MOUSE_RIGHT] = mouse.isPressed[MOUSE_RIGHT] = true;
+		return 0;
+
+		// Middle mouse button pressed
+	case WM_MBUTTONDOWN:
+		mouse.isHeld[MOUSE_MIDDLE] = mouse.isPressed[MOUSE_MIDDLE] = true;
+		return 0;
+
+		// Left mouse button released
+	case WM_LBUTTONUP:
+		mouse.isHeld[MOUSE_LEFT]     = false;
+		mouse.isReleased[MOUSE_LEFT] = true;
+		return 0;
+
+		// Right mouse button released
+	case WM_RBUTTONUP:
+		mouse.isHeld[MOUSE_RIGHT]     = false;
+		mouse.isReleased[MOUSE_RIGHT] = true;
+		return 0;
+
+		// Middle mouse button released
+	case WM_MBUTTONUP:
+		mouse.isHeld[MOUSE_MIDDLE]     = false;
+		mouse.isReleased[MOUSE_MIDDLE] = true;
+		return 0;
+
+		// Window focus
+	case WM_ACTIVATE:
+		window.hasFocus = !HIWORD(wParam);
+		return 0;
+
+		// System command
+	case WM_SYSCOMMAND:
+		if (wParam == SC_SCREENSAVE || wParam == SC_MONITORPOWER)
+			return 0;
+		break;
+
+		// Window resized
 	case WM_SIZE:
-		window.width = LOWORD(lParam);
+		window.width  = LOWORD(lParam);
 		window.height = HIWORD(lParam);
 		window.update();
 		return 0;
 
-		// Изменены размеры OpenGL окна
+		// Window moved
 	case WM_MOVE:
 		window.x = LOWORD(lParam);
 		window.y = HIWORD(lParam);
+		return 0;
+
+		// Window close
+	case WM_CLOSE:
+		Engine::game = false;
 		return 0;
 	}
 
