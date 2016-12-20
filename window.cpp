@@ -1,60 +1,59 @@
-// Прототип WndProc
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+// Prototype WndProc
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
-struct Window
-{
-	//friend void Engine::draw();
-//private:
-	HGLRC     hRC;       // Постоянный контекст рендеринга
-	HDC       hDC;       // Приватный контекст устройства GDI
-	HWND      hWnd;      // Здесь будет хранится дескриптор окна
-	HINSTANCE hInstance; // Здесь будет хранится дескриптор приложения
+// Prototype draw
+namespace Engine { void draw(); }
+
+class Window {
+private:
+	HGLRC     hRC       = nullptr; // Постоянный контекст рендеринга
+	HDC       hDC       = nullptr; // Приватный контекст устройства GDI
+	HWND      hWnd      = nullptr; // Здесь будет хранится дескриптор окна
+	HINSTANCE hInstance = nullptr; // Здесь будет хранится дескриптор приложения
+
+	friend void Engine::draw();
 
 public:
-	ushort x, y, width, height;
+	short x;
+	short y;
+	short width;
+	short height;
 	string title;
-	bool hasFocus, isFullscreen;
+	bool hasFocus;
+	bool isFullscreen;
 
-	Window() :
-		hRC(NULL),
-		hDC(NULL),
-		hWnd(NULL),
-		hInstance(NULL)
-	{
+	// Move
+	void move(short _x, short _y) {
+		SetWindowPos(hWnd, hWnd, x = _x, y = _y, width, height, SWP_NOZORDER | SWP_NOSIZE);
 	}
 
-	void move(ushort xNew, ushort yNew)
-	{
-		SetWindowPos(hWnd, hWnd, x = xNew, y = yNew, width, height, SWP_NOZORDER | SWP_NOSIZE);
-	}
-
-	void resize(ushort widthNew, ushort heightNew)
-	{
+	// Resize
+	void resize(ushort _width, ushort _height) {
 		RECT client, window;
 		GetClientRect(hWnd, &client);
 		GetWindowRect(hWnd, &window);
 
 		SetWindowPos(hWnd, hWnd, x, y,
-			widthNew  + window.right  - window.left - client.right,
-			heightNew + window.bottom - window.top  - client.bottom,
+			_width  + window.right  - window.left - client.right,
+			_height + window.bottom - window.top  - client.bottom,
 			SWP_NOZORDER | SWP_NOMOVE);
 	}
 
-	void update()
-	{
+	// Update
+	void update() {
 		glViewport(0, 0, width, height);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 
-		// Вычисление соотношения геометрических размеров для окна
+		// Calculate window aspect ratio
 		gluPerspective(camera.fov, (float)width / height, camera.zNear, camera.zFar);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 	}
 
-	void initialize()
-	{
-		glClearColor(0, 0, 0, 0);
+	// Initialization
+	void initialize() {
+		glClearColor(0.0, 0.0, 0.0, 0.0);
 
 		glShadeModel(GL_SMOOTH);
 		glEnable(GL_TEXTURE_2D);
@@ -64,7 +63,7 @@ public:
 
 		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glAlphaFunc(GL_GREATER, 0.01);
+		glAlphaFunc(GL_GREATER, (float)0.01);
 
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
@@ -72,33 +71,33 @@ public:
 		glEnable(GL_BLEND);
 	}
 
-	void changeFullscreen()
-	{
-		glDisable(GL_TEXTURE_2D);
+	// Change window mode
+	void changeFullscreen() {
 		destroy();
 		create(title, !isFullscreen, x, y, width, height);
 	}
 
-	void setTitle(string titleNew)
-	{
-		title = titleNew;
+	// Set title
+	void setTitle(string _title) {
+		title = _title;
 		SetWindowText(hWnd, title.c_str());
 	}
 
-	void destroy()
-	{
+	// Destroy
+	void destroy() {
 		if (isFullscreen) {
-			ChangeDisplaySettings(NULL, 0);
+			ChangeDisplaySettings(nullptr, 0);
 		}
 
 		if (hRC) {
-			if (!wglMakeCurrent(NULL, NULL)) {
+			if (!wglMakeCurrent(nullptr, nullptr)) {
 				showMessage("Release Of DC And RC Failed.");
 			}
 			if (!wglDeleteContext(hRC)) {
 				showMessage("Release Rendering Context Failed.");
 			}
 		}
+
 		if (hDC && !ReleaseDC(hWnd, hDC)) {
 			showMessage("Release Device Context Failed.");
 		}
@@ -109,42 +108,40 @@ public:
 			showMessage("Could Not Unregister Class.");
 		}
 
-		hRC       = NULL;
-		hDC       = NULL;
-		hWnd      = NULL;
-		hInstance = NULL;
+		hRC       = nullptr;
+		hDC       = nullptr;
+		hWnd      = nullptr;
+		hInstance = nullptr;
 	}
 
-	bool create(string GAME_title, bool GAME_fullscreen, short GAME_x, short GAME_y, short GAME_width, short GAME_height)
-	{
-		title = GAME_title;
-		isFullscreen = GAME_fullscreen;
-		x = GAME_x;
-		y = GAME_y;
-		width  = GAME_width;
-		height = GAME_height;
+	// Create
+	bool create(string _title, bool _fullscreen, short _x, short _y, short _width, short _height) {
+		title        = _title;
+		isFullscreen = _fullscreen;
+		x            = _x;
+		y            = _y;
+		width        = _width;
+		height       = _height;
 		if (isFullscreen) {
 			x = y = 0;
 		}
 
-		GLuint PixelFormat; // Хранит результат после поиска
-		WNDCLASS wc;        // Структура класса окна
-		DWORD dwExStyle;    // Расширенный стиль окна
-		DWORD dwStyle;      // Обычный стиль окна
-
-		RECT WindowRect = { 0, 0, width, height }; // Grabs Rectangle Upper Left / Lower Right Values
-
-		hInstance = GetModuleHandle(NULL);                          // Считаем дескриптор нашего приложения
-		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;              // Перерисуем и создаём скрытый DC
-		wc.lpfnWndProc = (WNDPROC)WndProc;                          // Процедура обработки сообщений
-		wc.cbClsExtra = 0;                                          // Нет дополнительной информации для окна
-		wc.cbWndExtra = 0;                                          // Нет дополнительной информации для окна
-		wc.hInstance = hInstance;                                   // Устанавливаем дескриптор
-		wc.hIcon = LoadIcon(hInstance, IDI_WINLOGO);                // Загружаем иконку по умолчанию
-		wc.hCursor = LoadCursor(NULL, IDC_ARROW);                   // Загружаем указатель мышки
-		wc.hbrBackground = NULL;                                    // Фон не требуется для GL
-		wc.lpszMenuName = NULL;                                     // Меню в окне не будет
-		wc.lpszClassName = "OpenGL";                                // Устанавливаем имя классу
+		GLuint   pixelFormat; // Хранит результат после поиска
+		WNDCLASS wc;          // Структура класса окна
+		DWORD    dwExStyle;   // Расширенный стиль окна
+		DWORD    dwStyle;     // Обычный стиль окна
+		
+		hInstance        = GetModuleHandle(nullptr);           // Считаем дескриптор нашего приложения
+		wc.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC; // Перерисуем и создаём скрытый DC
+		wc.lpfnWndProc   = (WNDPROC)WndProc;                   // Процедура обработки сообщений
+		wc.cbClsExtra    = 0;                                  // Нет дополнительной информации для окна
+		wc.cbWndExtra    = 0;                                  // Нет дополнительной информации для окна
+		wc.hInstance     = hInstance;                          // Устанавливаем дескриптор
+		wc.hIcon         = LoadIcon(hInstance, IDI_WINLOGO);   // Загружаем иконку по умолчанию
+		wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);     // Загружаем указатель мышки
+		wc.hbrBackground = nullptr;                            // Фон не требуется для GL
+		wc.lpszMenuName  = nullptr;                            // Меню в окне не будет
+		wc.lpszClassName = "OpenGL";                           // Устанавливаем имя классу
 
 		// Пытаемся зарегистрировать класс окна
 		if (!RegisterClass(&wc)) {
@@ -154,13 +151,13 @@ public:
 		
 		// Полноэкранный режим?
 		if (isFullscreen) {
-			DEVMODE dmScreenSettings;                                                 // Режим устройства
-			memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));                   // Очистка для хранения установок
-			dmScreenSettings.dmSize = sizeof(dmScreenSettings);                       // Размер структуры Devmode
-			dmScreenSettings.dmPelsWidth = width;                                     // Ширина экрана
-			dmScreenSettings.dmPelsHeight = height;                                   // Высота экрана
-			dmScreenSettings.dmBitsPerPel = 32;                                       // Глубина цвета
-			dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT; // Режим Пикселя
+			DEVMODE dmScreenSettings;                                                     // Режим устройства
+			memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));                       // Очистка для хранения установок
+			dmScreenSettings.dmSize       = sizeof(dmScreenSettings);                     // Размер структуры Devmode
+			dmScreenSettings.dmPelsWidth  = width;                                        // Ширина экрана
+			dmScreenSettings.dmPelsHeight = height;                                       // Высота экрана
+			dmScreenSettings.dmBitsPerPel = 32;                                           // Глубина цвета
+			dmScreenSettings.dmFields     = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT; // Режим Пикселя
 
 			// Пытаемся установить выбранный режим и получить результат.
 			if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL) {
@@ -171,31 +168,31 @@ public:
 		if (isFullscreen || GAME_NOBORDER) {
 			dwExStyle = WS_EX_APPWINDOW; // Расширенный стиль окна
 			dwStyle   = WS_POPUP;        // Обычный стиль окна
-		}
-		else {
-			dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;   // Расширенный стиль окна
+		} else {
+			dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
 			dwStyle   = WS_OVERLAPPEDWINDOW;
 			if (!GAME_MINIMIZE) dwStyle &= ~WS_MINIMIZEBOX;
 			if (!GAME_MAXIMIZE) dwStyle &= ~WS_MAXIMIZEBOX;
 		}
 
 		// Подбирает окну подходящие размеры
+		RECT WindowRect = { 0, 0, width, height };
 		AdjustWindowRectEx(&WindowRect, dwStyle, false, dwExStyle);
 
 		if (!(hWnd = CreateWindowEx(
-			dwExStyle,                          // Расширенный стиль для окна
-			"OpenGL",                           // Имя класса
-			title.c_str(),                      // Заголовок окна
-			WS_CLIPSIBLINGS |                   // Требуемый стиль для окна
-			WS_CLIPCHILDREN |                   // Требуемый стиль для окна
-			dwStyle,                            // Выбираемые стили для окна
-			x, y,                               // Позиция окна
-			WindowRect.right - WindowRect.left, // Вычисление подходящей ширины
-			WindowRect.bottom - WindowRect.top, // Вычисление подходящей высоты
-			NULL,                               // Нет родительского
-			NULL,                               // Нет меню
-			hInstance,                          // Дескриптор приложения
-			NULL)))                             // Не передаём ничего до WM_CREATE (???)
+			dwExStyle,                           // Расширенный стиль для окна
+			"OpenGL",                            // Имя класса
+			title.c_str(),                       // Заголовок окна
+			WS_CLIPSIBLINGS |                    // Требуемый стиль для окна
+			WS_CLIPCHILDREN |                    // Требуемый стиль для окна
+			dwStyle,                             // Выбираемые стили для окна
+			x, y,                                // Позиция окна
+			WindowRect.right  - WindowRect.left, // Вычисление подходящей ширины
+			WindowRect.bottom - WindowRect.top,  // Вычисление подходящей высоты
+			nullptr,                             // Нет родительского
+			nullptr,                             // Нет меню
+			hInstance,                           // Дескриптор приложения
+			nullptr)))                           // Не передаём ничего до WM_CREATE (???)
 		{
 			destroy();                               // Восстановить экран
 			showMessage("Ошибка при создании окна"); // Ошибка
@@ -203,17 +200,17 @@ public:
 		}
 
 		static PIXELFORMATDESCRIPTOR pfd = { 0 };
-		pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-		pfd.nVersion = 1;
-		pfd.dwFlags = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER | PFD_DRAW_TO_WINDOW;
+		pfd.nSize      = sizeof(PIXELFORMATDESCRIPTOR);
+		pfd.nVersion   = 1;
+		pfd.dwFlags    = PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER | PFD_DRAW_TO_WINDOW;
 		pfd.iPixelType = PFD_TYPE_RGBA;
 		pfd.cColorBits = pfd.cDepthBits = 32;
 		pfd.iLayerType = PFD_MAIN_PLANE;
 
 		// Проверяем на ошибки
 		if (hDC = GetDC(hWnd)) {
-			if (PixelFormat = ChoosePixelFormat(hDC, &pfd)) {
-				if (SetPixelFormat(hDC, PixelFormat, &pfd)) {
+			if (pixelFormat = ChoosePixelFormat(hDC, &pfd)) {
+				if (SetPixelFormat(hDC, pixelFormat, &pfd)) {
 					if (hRC = wglCreateContext(hDC)) {
 						if (wglMakeCurrent(hDC, hRC)) {
 							ShowWindow(hWnd, SW_SHOW);    // Показать окно
@@ -221,18 +218,12 @@ public:
 							SetFocus(hWnd);               // Установить фокус клавиатуры на наше окно
 							update();                     // Перспектива
 							initialize();                 // Прочее
-
 							return true;                  // Окно создано
-						}
-						else showMessage("Can't Activate The GL Rendering Context.");
-					}
-					else showMessage("Can't Create A GL Rendering Context.");
-				}
-				else showMessage("Can't Set The PixelFormat.");
-			}
-			else showMessage("Can't Find A Suitable PixelFormat.");
-		}
-		else showMessage("Can't Create A GL Device Context.");
+						} else showMessage("Can't Activate The GL Rendering Context.");
+					} else showMessage("Can't Create A GL Rendering Context.");
+				} else showMessage("Can't Set The pixelFormat.");
+			} else showMessage("Can't Find A Suitable pixelFormat.");
+		} else showMessage("Can't Create A GL Device Context.");
 
 		// Ошибка
 		destroy();
@@ -241,19 +232,17 @@ public:
 } window;
 
 // Window procedure
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	// Check message
-	switch (uMsg)
-	{
+	switch (uMsg) {
 		// Key pressed
 	case WM_KEYDOWN:
-		keyboard.isHeld[keyboard.lastKeyPressed = wParam] = keyboard.isPressed[wParam] = true;
+		keyboard.isHeld[keyboard.lastPressedKey_ = wParam] = keyboard.isPressed[wParam] = true;
 		return 0;
 
 		// Key released
 	case WM_KEYUP:
-		keyboard.isHeld[wParam] = false;
+		keyboard.isHeld[wParam]     = false;
 		keyboard.isReleased[wParam] = true;
 		return 0;
 

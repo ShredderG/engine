@@ -1,51 +1,59 @@
-struct Camera
-{
-	float 
-		x, xAngle,
-		y, yAngle,
-		z, zAngle,
-		zNear, zFar,
-		fov;
+// Camera
+class Camera {
+public:
+	float x;
+	float y;
+	float z;
+	float xAngle;
+	float yAngle;
+	float zAngle;
+	float zNear;
+	float zFar;
+	float fov;
 
 	Camera() :
-		x(0.0), xAngle(0.0),
-		y(0.0), yAngle(0.0),
-		z(0.0), zAngle(0.0),
-		zNear(0.5), zFar(512.0),
-		fov(60.0)
-	{
+		x(0.0),
+		y(0.0),
+		z(0.0),
+		xAngle(0.0),
+		yAngle(0.0),
+		zAngle(0.0),
+		zNear(0.5),
+		zFar(512.0),
+		fov(60.0) {
+		// nothing here
 	}
 
-	void set(float xNew, float yNew, float zNew, float xAngleNew, float yAngleNew, float zAngleNew)
-	{
-		while (xAngleNew >= 360.0) xAngleNew -= 360.0;
-		while (yAngleNew >= 360.0) yAngleNew -= 360.0;
-		while (zAngleNew >= 360.0) zAngleNew -= 360.0;
-		while (xAngleNew < 0.0) xAngleNew += 360.0;
-		while (yAngleNew < 0.0) yAngleNew += 360.0;
-		while (zAngleNew < 0.0) zAngleNew += 360.0;
+	// Set camera state
+	void set(float _x, float _y, float _z, float _xAngle, float _yAngle, float _zAngle) {
+		while (_xAngle >= 360.0) _xAngle -= 360.0;
+		while (_yAngle >= 360.0) _yAngle -= 360.0;
+		while (_zAngle >= 360.0) _zAngle -= 360.0;
+		while (_xAngle < 0.0) _xAngle += 360.0;
+		while (_yAngle < 0.0) _yAngle += 360.0;
+		while (_zAngle < 0.0) _zAngle += 360.0;
 
-		x = xNew;
-		y = yNew;
-		z = zNew;
-		xAngle = xAngleNew - 90.0;
-		yAngle = yAngleNew;
-		zAngle = zAngleNew;
+		x = _x;
+		y = _y;
+		z = _z;
+		xAngle = _xAngle - (float)90.0;
+		yAngle = _yAngle;
+		zAngle = _zAngle;
 
 		update();
 	}
 
-	void update()
-	{
+	// Rotate world
+	void update() {
 		glLoadIdentity();
-		glRotatef(-yAngle, 1.0, 0.0, 0.0); // вверх-вниз
-		glRotatef(-zAngle, 0.0, 1.0, 0.0); // вбок-невбок
-		glRotatef(-xAngle, 0.0, 0.0, 1.0); // влево-вправо
+		glRotatef(-yAngle, 1.0, 0.0, 0.0);
+		glRotatef(-zAngle, 0.0, 1.0, 0.0);
+		glRotatef(-xAngle, 0.0, 0.0, 1.0);
 		glTranslatef(-x, -y, -z);
 	}
 
-	void set2d(short x1, short y1, short x2, short y2)
-	{
+	// 2d mode
+	void set2d(short x1, short y1, short x2, short y2) {
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
@@ -55,8 +63,8 @@ struct Camera
 		glLoadIdentity();
 	}
 
-	void set3d()
-	{
+	// 3d mode
+	void set3d() {
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);

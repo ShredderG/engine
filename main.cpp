@@ -1,7 +1,5 @@
-// No warnings
-#define _CRT_SECURE_NO_WARNINGS
-
 // Libraries
+#pragma comment (lib, "winmm.lib") // TODO: find another lib for *.wav
 #pragma comment (lib, "opengl32.lib")
 #pragma comment (lib, "glu32.lib")
 #pragma comment (lib, "wsock32.lib")
@@ -25,6 +23,7 @@ typedef unsigned int   uint;
 // Engine
 #include "files/defines.cpp"
 #include "functions.cpp"
+#include "sfx.cpp" // TODO: remove warnings, double to float, 0 to 0.0, tabulation
 #include "winsock.cpp"
 #include "keyboard.cpp"
 #include "mouse.cpp"
@@ -37,8 +36,7 @@ typedef unsigned int   uint;
 #include "files/objects.cpp"
 
 // Main function
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 	// Create window
 	if (!window.create(GAME_TITLE, GAME_FULL,
 		(display.width  - GAME_WIDTH)  / 2,
@@ -52,11 +50,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// Load textures, shader, room
 	Engine::loadTextures();
-	shader.create();
+	shader.initialize();
 	room = r_start;
-
+	
 	// Variables
-	constexpr float timeForFrame = 1000.0 / GAME_FPS;
+	constexpr float timeForFrame = (float)1000.0 / GAME_FPS;
 	int frame       = 0,
 		timeCurrent = clock(),
 		timeStart   = timeCurrent,
@@ -79,7 +77,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// Wait some mseconds if needed
-		if ((timeSleep = timeStart + timeForFrame * ++frame - (timeCurrent = clock())) > 0) {
+		if ((timeSleep = timeStart + int(timeForFrame * ++frame) - (timeCurrent = clock())) > 0) {
 			timeCurrent += timeSleep;
 			Sleep(timeSleep);
 		}

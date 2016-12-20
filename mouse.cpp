@@ -1,6 +1,5 @@
 // Mouse buttons
-enum MouseButton : uchar
-{
+enum MouseButton : uchar {
 	MOUSE_LEFT       = 0,
 	MOUSE_RIGHT      = 1,
 	MOUSE_WHEEL      = 2,
@@ -11,19 +10,18 @@ enum MouseButton : uchar
 };
 
 // Mouse
-struct Mouse
-{
-	short x, y;
-	bool
-		isReleased[3],
-		isPressed[3],
-		isHeld[3],
-		isWheelRotated[2],
-		isVisible,
-		isOutside;
+class Mouse {
+public:
+	short x;
+	short y;
+	bool isReleased[3];
+	bool isPressed[3];
+	bool isHeld[3];
+	bool isWheelRotated[2];
+	bool isVisible;
+	bool isOutside;
 	
-	Mouse() : isOutside(false)
-	{
+	Mouse() : isOutside(false) {
 		memset(isHeld, false, 3);
 		reset();
 
@@ -35,34 +33,30 @@ struct Mouse
 	}
 
 	// Move mouse
-	void move(short xNew, short yNew)
-	{
-		if (bool(GetActiveWindow())) {
+	void move(short _x, short _y) {
+		if (GetActiveWindow()) {
 			POINT point;
 			GetCursorPos(&point);
-			SetCursorPos(point.x - x + xNew, point.y - y + yNew);
+			SetCursorPos(point.x - x + _x, point.y - y + _y);
 		}
 	}
 
 	// Show mouse
-	void show()
-	{
+	void show() {
 		while (ShowCursor(true) < 0);
 		isVisible = true;
 	}
 
 	// Hide mouse
-	void hide()
-	{
+	void hide() {
 		while (ShowCursor(false) >= 0);
 		isVisible = false;
 	}
 
 	// Reset buttons status
-	void reset()
-	{
-		isWheelRotated[MOUSE_WHEEL_UP] = isWheelRotated[MOUSE_WHEEL_DOWN] = false;
+	void reset() {
 		memset(isPressed,  false, 3);
 		memset(isReleased, false, 3);
+		isWheelRotated[MOUSE_WHEEL_UP] = isWheelRotated[MOUSE_WHEEL_DOWN] = false;
 	}
 } mouse;

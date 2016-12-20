@@ -1,34 +1,32 @@
-struct Winsock
-{
+// Winsock
+class Winsock {
 private:
-	// Õ¿—“–Œ… »
+	// Settings
 	#define DEFAULT_IP "127.0.1.0"
-	static const ushort DEFAULT_PORT = 6881;
-	static const ushort WINS_VERSION = 0x0101;
-	static const uint   BUFFER_SIZE  = 1024 * 1024;
-	static const uint   MAX_CLIENTS  = 8;
+	static constexpr ushort DEFAULT_PORT = 6881;
+	static constexpr ushort WINS_VERSION = 0x0101;
+	static constexpr uint   BUFFER_SIZE  = 1024 * 1024;
+	static constexpr uint   MAX_CLIENTS  = 8;
 
-	char
-		bufferRead[BUFFER_SIZE],
-		bufferWrite[BUFFER_SIZE];
-	uint
-		bufferReadIndex  = 0,
-		bufferWriteIndex = 0;
+	char bufferRead[BUFFER_SIZE]  = { 0 };
+	char bufferWrite[BUFFER_SIZE] = { 0 };
+
+	uint bufferReadIndex  = 0;
+	uint bufferWriteIndex = 0;
 
 	// Client/server socket
 	SOCKET Socket = INVALID_SOCKET;
 	
 	// Start winsock
-	bool initialize()
-	{
+	bool initialize() {
 		// WSAStartup
 		if (WSAStartup(WINS_VERSION, (WSADATA *)bufferRead) != NO_ERROR) {
 			showError("WSAStartup");
 			return false;
 		}
-
+		
 		// Create socket
-		if ((Socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		if ((Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET) {
 			showError("socket");
 			WSACleanup();
 			return false;
@@ -38,18 +36,16 @@ private:
 	}
 
 	// Show error
-	void showError(string function)
-	{
-		showMessage("Error " + function + " " + str(WSAGetLastError()));
+	void showError(string function) {
+		showMessage("Error " + function + " " + to_string(WSAGetLastError()));
 	}
 
 public:
 	// Clients sockets for server
 	SOCKET clientSockets[MAX_CLIENTS] = { INVALID_SOCKET };
 
-	// œ‡ˆ‡Ì˚ „Ó, ˇ ÒÓÁ‰‡Î
-	bool startServer(ushort port = DEFAULT_PORT)
-	{
+	// Create server
+	bool startServer(ushort port = DEFAULT_PORT) {
 		// Initialize WS
 		if (!initialize()) {
 			return false;
@@ -79,8 +75,7 @@ public:
 	}
 
 	// Connect to server
-	bool startClient(char *ip = DEFAULT_IP, ushort port = DEFAULT_PORT)
-	{
+	bool startClient(char *ip = DEFAULT_IP, ushort port = DEFAULT_PORT) {
 		// Initialize WS
 		if (!initialize()) {
 			return false;
@@ -110,16 +105,14 @@ public:
 	}
 
 	// Close client/server socket
-	void closeSocket()
-	{
+	void closeSocket() {
 		closeSocket(Socket);
 		WSACleanup();
 	}
 
 	// Close concrete socket
-	void closeSocket(SOCKET &Socket)
-	{
-		const int SD_BOTH = 2;
+	void closeSocket(SOCKET &Socket) {
+		constexpr int SD_BOTH = 2;
 		if (shutdown(Socket, SD_BOTH) == SOCKET_ERROR) {
 			showError("shutdown");
 		}
@@ -133,8 +126,7 @@ public:
 	}
 
 	// Accept new client 
-	SOCKET acceptSocket()
-	{
+	SOCKET acceptSocket() {
 		timeval time;
 		time.tv_sec = time.tv_usec = 0;
 
@@ -171,24 +163,21 @@ public:
 	}
 
 	/****************************************/
-	/************** —ŒŒ¡Ÿ≈Õ»ﬂ ***************/
+	/************** MESSAGES ****************/
 	/****************************************/
 
 	// Clear buffer
-	inline void clearBuffer()
-	{
+	inline void clearBuffer() {
 		bufferWriteIndex = 0;
 	}
 
 	// Receive message from server/client
-	int getMessage()
-	{
+	int getMessage() {
 		return getMessage(Socket);
 	}
 
 	// Receive message from concrete socket
-	int getMessage(SOCKET Socket)
-	{
+	int getMessage(SOCKET Socket) {
 		bufferReadIndex = 0;
 
 		timeval time;
@@ -209,22 +198,19 @@ public:
 	}
 
 	// Send message to server/client
-	void sendMessage()
-	{
+	void sendMessage() {
 		sendMessage(Socket);
 	}
 
 	// Send message to all clients
-	void sendMessageAll()
-	{
+	void sendMessageAll() {
 		for (int i = 0; i < MAX_CLIENTS; i++) {
 			sendMessage(clientSockets[i]);
 		}
 	}
 
 	// Send message to all clients except one
-	void sendMessageAllExcept(SOCKET Socket)
-	{
+	void sendMessageAllExcept(SOCKET Socket) {
 		for (int i = 0; i < MAX_CLIENTS; i++) {
 			if (clientSockets[i] != Socket) {
 				sendMessage(clientSockets[i]);
@@ -233,12 +219,11 @@ public:
 	}
 
 	// Send message to concrete socket
-	void sendMessage(SOCKET Socket)
-	{
+	void sendMessage(SOCKET Socket) {
 		if (Socket != INVALID_SOCKET) {
 			if (bufferWriteIndex > 0) {
 				if (send(Socket, bufferWrite, bufferWriteIndex, 0) == SOCKET_ERROR) {
-					showMessage("Error send " + str(WSAGetLastError()));
+					showError("send");
 				}
 			}
 		}
@@ -254,21 +239,21 @@ public:
 
 	short read2() {
 		bufferReadIndex += 2;
-		return *(short *)&bufferRead[bufferReadIndex - 2];
+		return *(short*)&bufferRead[bufferReadIndex - 2];
 	}
 
 	int read4() {
 		bufferReadIndex += 4;
-		return *(int *)&bufferRead[bufferReadIndex - 4];
+		return *(int*)&bufferRead[bufferReadIndex - 4];
 	}
 
 	float read4f() {
 		bufferReadIndex += 4;
-		return *(float *)&bufferRead[bufferReadIndex - 4];
+		return *(float*)&bufferRead[bufferReadIndex - 4];
 	}
 
-	char *readStr() {
-		char *text = (char *)&bufferRead[bufferReadIndex];
+	char* readStr() {
+		char *text = (char*)&bufferRead[bufferReadIndex];
 		bufferReadIndex += strlen(text) + 1;
 		return text;
 	}
@@ -283,25 +268,25 @@ public:
 
 	void write2(short a) {
 		for (char i = 0; i < 2; i++) {
-			bufferWrite[bufferWriteIndex++] = *((char *)&a + i);
+			bufferWrite[bufferWriteIndex++] = *((char*)&a + i);
 		}
 	}
 
 	void write4(int a) {
 		for (char i = 0; i < 4; i++) {
-			bufferWrite[bufferWriteIndex++] = *((char *)&a + i);
+			bufferWrite[bufferWriteIndex++] = *((char*)&a + i);
 		}
 	}
 
 	void write4f(float a) {
 		for (char i = 0; i < 4; i++) {
-			bufferWrite[bufferWriteIndex++] = *((char *)&a + i);
+			bufferWrite[bufferWriteIndex++] = *((char*)&a + i);
 		}
 	}
 
 	void writeStr(string text) {
-		for (uchar i = 0, length = text.size(); i <= length; i++) {
-			bufferWrite[bufferWriteIndex++] = text[i];
+		for (uint i = 0, length = text.size(); i <= length; i++) {
+			bufferWrite[bufferWriteIndex++] = (char)text[i];
 		}
 	}
 

@@ -1,139 +1,118 @@
-// show text
-void showMessage(string text)
-{
-	MessageBox(NULL, text.c_str(), "Message", MB_OK);
+// PIs
+constexpr float PI        = (float)3.141592741;
+constexpr float PI_180    = (float)180.0 / PI;
+constexpr float PI_HALF   = PI / 2.0;
+constexpr float PI_DOUBLE = PI * 2.0;
+
+// byte [0, 255] to float [0.0, 1.0]
+constexpr float char_to_float(uchar value) {
+	return value / (float)255.0;
 }
 
-// int to string
-string str(int a)
-{
-	char buffer[12];
-	string result = "";
-	if (a < 0) {
-		result += "-";
-		a *= -1;
-	}
-	result += _itoa(a, buffer, 10);
-	return result;
+// float [0.0, 1.0] to byte [0, 255]
+constexpr uchar float_to_char(float value) {
+	return (uchar)(value * 255.0);
 }
 
-// float to string
-string strf(float a)
-{
-	char buffer[12];
-	string result = "";
-	if (a < 0.0) {
-		result += "-";
-		a *= -1;
-	}
-	int b = a;
-	result += _itoa(b, buffer, 10);
-	result += ".";
-	b = (a - b) * 100;
-	result += _itoa(b, buffer, 10);
-	return result;
+// Show message
+void showMessage(string text) {
+	MessageBox(nullptr, text.c_str(), "Message", MB_OK);
 }
 
 // string to int
-int real(string a)
-{
-	return atoi(a.c_str());
+int to_int(string value) {
+	return stoi(value);
 }
 
 // string to float
-float realf(string a)
-{
-	return atof(a.c_str());
+float to_float(string value) {
+	return stof(value);
 }
 
 // [0 - 0xFFFFFFFF]
-uint GAME_rand()
-{
-	return rand() | (rand() << 16);
+uint _random() {
+	return (rand() & 0xFF) | ((rand() & 0xFF) << 8) | ((rand() & 0xFF) << 16) | ((rand() & 0xFF) << 24);
 }
 
 // [0 - value]
-int irandom(int value)
-{
-	return GAME_rand() % (value + 1);
+uint random(uint value) {
+	return _random() % (value + 1);
 }
 
 // [from - to]
-int irandom(int from, int to)
-{
-	return from + GAME_rand() % (to - from + 1);
+int random(int from, int to) {
+	return from + _random() % (abs(to - from) + 1);
 }
 
 // [0.0 - 1.0]
-float random()
-{
+float random() {
 	return (float)rand() / RAND_MAX;
 }
 
 // [0.0 - value]
-float random(float value)
-{
-	return irandom(value) + random() * (value - int(value));
+float random(float value) {
+	return random((uint)value) + random() * (value - (int)value);
 }
 
 // [from - to]
-float random(float from, float to)
-{
-	return from + random(to - from);
+float random(float from, float to) {
+	return from + random(fabs(to - from));
 }
 
-// PI
-constexpr float PI        = 3.141592741;
-constexpr float PI_180    = 180.0 / PI;
-constexpr float PI_HALF   = PI / 2.0;
-constexpr float PI_DOUBLE = PI * 2.0;
+// Length direction x
+float lenDirX(float length, float xAngle, float yAngle = 90.0) {
+	return length * cos(xAngle / PI_180) * sin(yAngle / PI_180);
+}
 
-// length_dir
-float stepX(float length, float xAngle, float yAngle = 90.0) { return length * cos(xAngle / PI_180) * sin(yAngle / PI_180); }
-float stepY(float length, float xAngle, float yAngle = 90.0) { return length * sin(xAngle / PI_180) * sin(yAngle / PI_180); }
-float stepZ(float length, float xAngle, float yAngle = 90.0) { return length * sin(yAngle / PI_180 - PI_HALF); }
+// Length direction y
+float lenDirY(float length, float xAngle, float yAngle = 90.0) {
+	return length * sin(xAngle / PI_180) * sin(yAngle / PI_180);
+}
 
-constexpr float sqr(float x)
-{
+// Length direction z
+float lenDirZ(float length, float xAngle, float yAngle = 90.0) {
+	return length * sin(yAngle / PI_180 - PI_HALF);
+}
+
+// Squared number
+constexpr float sqr(float x) {
 	return x * x;
 }
 
-float pointDistance(float x1, float y1, float x2, float y2)
-{
+// Distance between (x1,y1) and (x2,y2)
+float pointDistance(float x1, float y1, float x2, float y2) {
 	return sqrt(sqr(x2 - x1) + sqr(y2 - y1));
 }
 
-float pointDistance(float x1, float y1, float z1, float x2, float y2, float z2)
-{
+// Distance between (x1,y1,z1) and (x2,y2,z2)
+float pointDistance(float x1, float y1, float z1, float x2, float y2, float z2) {
 	return sqrt(sqr(x2 - x1) + sqr(y2 - y1) + sqr(z2 - z1));
 }
 
-// Направление по горизонтали из (x1,y1) в (x2,y2)
-float pointDirection(float x1, float y1, float x2, float y2)
-{
+// Horizontal direction from (x1,y1) to (x2,y2)
+float pointDirection(float x1, float y1, float x2, float y2) {
 	float xx = x2 - x1;
 	if (xx != 0.0) {
 		float v = atan((y2 - y1) / xx) * PI_180;
 
 		if (x2 > x1) {
 			if (y1 > y2)
-				return v + 360.0;
+				return v + (float)360.0;
 			else
 				return v;
 		}
-		return v + 180.0;
+		return v + (float)180.0;
 	}
 	if (y1 > y2) return 270.0;
 	if (y1 < y2) return 90.0;
 	return 0.0;
 }
 
-// Направление по вертикали из (x1,y1,z1) в (x2,y2,z2)
-float pointDirection(float x1, float y1, float z1, float x2, float y2, float z2)
-{
+// Vertical direction from (x1,y1,z1) to (x2,y2,z2)
+float pointDirection(float x1, float y1, float z1, float x2, float y2, float z2) {
 	float distance = pointDistance(x1, y1, x2, y2);
 
-	if (distance != 0.0) return atan((z2 - z1) / distance) * PI_180 + 90.0;
+	if (distance != 0.0) return (float) atan((z2 - z1) / distance) * PI_180 + (float)90.0;
 	if (z1 < z2) return 180.0;
-	return 0;
+	return 0.0;
 }
