@@ -23,7 +23,7 @@ typedef unsigned int   uint;
 // Engine
 #include "files/defines.cpp"
 #include "functions.cpp"
-#include "sfx.cpp" // TODO: remove warnings, double to float, 0 to 0.0, tabulation
+#include "sfx.cpp"
 #include "winsock.cpp"
 #include "keyboard.cpp"
 #include "mouse.cpp"
@@ -43,7 +43,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		(display.height - GAME_HEIGHT) / 2,
 		GAME_WIDTH, GAME_HEIGHT)) {
 		return 0;
-	}
+	}	
 
 	// Seed random generator
 	srand((unsigned)time(nullptr));
@@ -52,14 +52,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Engine::loadTextures();
 	shader.initialize();
 	room = r_start;
-	
+
 	// Variables
 	constexpr float timeForFrame = (float)1000.0 / GAME_FPS;
-	int frame       = 0,
-		timeCurrent = clock(),
-		timeStart   = timeCurrent,
-		timeEnd     = timeStart + 1000,
-		timeSleep;
+	int frame       = 0;
+	int timeCurrent = clock();
+	int timeStart   = timeCurrent;
+	int timeEnd     = timeStart + 1000;
+	int timeSleep;
 	MSG msg;
 
 	// Main cycle

@@ -8,7 +8,8 @@
 #define GAME_MOUSE    true
 #define GAME_NOBORDER false
 
-namespace Engine {
+namespace Engine
+{
     uchar fps = GAME_FPS;
     bool game = true;
 }

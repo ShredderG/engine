@@ -93,15 +93,15 @@ float pointDistance(float x1, float y1, float z1, float x2, float y2, float z2) 
 float pointDirection(float x1, float y1, float x2, float y2) {
 	float xx = x2 - x1;
 	if (xx != 0.0) {
-		float v = atan((y2 - y1) / xx) * PI_180;
+		float direction = atan((y2 - y1) / xx) * PI_180;
 
 		if (x2 > x1) {
 			if (y1 > y2)
-				return v + (float)360.0;
+				return direction + (float)360.0;
 			else
-				return v;
+				return direction;
 		}
-		return v + (float)180.0;
+		return direction + (float)180.0;
 	}
 	if (y1 > y2) return 270.0;
 	if (y1 < y2) return 90.0;
@@ -112,7 +112,7 @@ float pointDirection(float x1, float y1, float x2, float y2) {
 float pointDirection(float x1, float y1, float z1, float x2, float y2, float z2) {
 	float distance = pointDistance(x1, y1, x2, y2);
 
-	if (distance != 0.0) return (float) atan((z2 - z1) / distance) * PI_180 + (float)90.0;
+	if (distance != 0.0) return atan((z2 - z1) / distance) * PI_180 + (float)90.0;
 	if (z1 < z2) return 180.0;
 	return 0.0;
 }

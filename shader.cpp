@@ -2,84 +2,91 @@
 
 // Shader
 class Shader {
+private:
+
 public:
 	static const int SIZE = 2048;
 	uint program;
+	uint program1;
 	uint program2;
 	uint rbo;
 	uint fbo;
 	uint texture;
 
-	PFNGLCREATEPROGRAMPROC				gl_CreateProgram;
-	PFNGLDELETEPROGRAMPROC				gl_DeleteProgram;
-	PFNGLUSEPROGRAMPROC					gl_UseProgram;
-	PFNGLATTACHSHADERPROC				gl_AttachShader;
-	PFNGLDETACHSHADERPROC				gl_DetachShader;
-	PFNGLLINKPROGRAMPROC				gl_LinkProgram;
-	PFNGLGETPROGRAMIVPROC				gl_GetProgramiv;
-	PFNGLGETSHADERINFOLOGPROC			gl_GetShaderInfoLog;
-	PFNGLGETUNIFORMLOCATIONPROC			gl_GetUniformLocation;
-	PFNGLUNIFORM1IPROC					gl_Uniform1i;
-	PFNGLUNIFORM2IPROC					gl_Uniform2i;
-	PFNGLUNIFORM3IPROC					gl_Uniform3i;
-	PFNGLUNIFORM4IPROC					gl_Uniform4i;
-	PFNGLUNIFORM1FPROC					gl_Uniform1f;
-	PFNGLUNIFORM2FPROC					gl_Uniform2f;
-	PFNGLUNIFORM3FPROC					gl_Uniform3f;
-	PFNGLUNIFORM4FPROC					gl_Uniform4f;
-	PFNGLUNIFORMMATRIX4FVPROC			gl_UniformMatrix4fv;
-	PFNGLGETATTRIBLOCATIONPROC			gl_GetAttribLocation;
-	PFNGLVERTEXATTRIB1FPROC				gl_VertexAttrib1f;
-	PFNGLVERTEXATTRIB1FVPROC			gl_VertexAttrib1fv;
-	PFNGLVERTEXATTRIB2FVPROC			gl_VertexAttrib2fv;
-	PFNGLVERTEXATTRIB3FVPROC			gl_VertexAttrib3fv;
-	PFNGLVERTEXATTRIB4FVPROC			gl_VertexAttrib4fv;
-	PFNGLENABLEVERTEXATTRIBARRAYPROC	gl_EnableVertexAttribArray;
-	PFNGLBINDATTRIBLOCATIONPROC			gl_BindAttribLocation;
-	PFNGLACTIVETEXTUREPROC				gl_ActiveTexture;
-	PFNGLCREATESHADERPROC				gl_CreateShader;
-	PFNGLDELETESHADERPROC				gl_DeleteShader;
-	PFNGLSHADERSOURCEPROC				gl_ShaderSource;
-	PFNGLCOMPILESHADERPROC				gl_CompileShader;
-	PFNGLGETSHADERIVPROC				gl_GetShaderiv;
-	PFNGLGENFRAMEBUFFERSPROC			gl_GenFramebuffers;
-	PFNGLBINDFRAMEBUFFERPROC			gl_BindFramebuffer;
-	PFNGLFRAMEBUFFERTEXTURE2DPROC		gl_FramebufferTexture2D;
-	PFNGLCHECKFRAMEBUFFERSTATUSPROC		gl_CheckFramebufferStatus;
+	PFNGLCREATEPROGRAMPROC           gl_CreateProgram;
+	PFNGLDELETEPROGRAMPROC           gl_DeleteProgram;
+	PFNGLUSEPROGRAMPROC              gl_UseProgram;
+	PFNGLATTACHSHADERPROC            gl_AttachShader;
+	PFNGLDETACHSHADERPROC            gl_DetachShader;
+	PFNGLLINKPROGRAMPROC             gl_LinkProgram;
+	PFNGLGETPROGRAMIVPROC            gl_GetProgramiv;
+	PFNGLGETSHADERINFOLOGPROC        gl_GetShaderInfoLog;
+	PFNGLGETUNIFORMLOCATIONPROC      gl_GetUniformLocation;
+	PFNGLUNIFORM1IPROC               gl_Uniform1i;
+	PFNGLUNIFORM2IPROC               gl_Uniform2i;
+	PFNGLUNIFORM3IPROC               gl_Uniform3i;
+	PFNGLUNIFORM4IPROC               gl_Uniform4i;
+	PFNGLUNIFORM1FPROC               gl_Uniform1f;
+	PFNGLUNIFORM2FPROC               gl_Uniform2f;
+	PFNGLUNIFORM3FPROC               gl_Uniform3f;
+	PFNGLUNIFORM4FPROC               gl_Uniform4f;
+	PFNGLUNIFORMMATRIX4FVPROC        gl_UniformMatrix4fv;
+	PFNGLGETATTRIBLOCATIONPROC       gl_GetAttribLocation;
+	PFNGLVERTEXATTRIB1FPROC          gl_VertexAttrib1f;
+	PFNGLVERTEXATTRIB1FVPROC         gl_VertexAttrib1fv;
+	PFNGLVERTEXATTRIB2FVPROC         gl_VertexAttrib2fv;
+	PFNGLVERTEXATTRIB3FVPROC         gl_VertexAttrib3fv;
+	PFNGLVERTEXATTRIB4FVPROC         gl_VertexAttrib4fv;
+	PFNGLENABLEVERTEXATTRIBARRAYPROC gl_EnableVertexAttribArray;
+	PFNGLBINDATTRIBLOCATIONPROC      gl_BindAttribLocation;
+	PFNGLACTIVETEXTUREPROC           gl_ActiveTexture;
+	PFNGLCREATESHADERPROC            gl_CreateShader;
+	PFNGLDELETESHADERPROC            gl_DeleteShader;
+	PFNGLSHADERSOURCEPROC            gl_ShaderSource;
+	PFNGLCOMPILESHADERPROC           gl_CompileShader;
+	PFNGLGETSHADERIVPROC             gl_GetShaderiv;
+	PFNGLGENFRAMEBUFFERSPROC         gl_GenFramebuffers;
+	PFNGLBINDFRAMEBUFFERPROC         gl_BindFramebuffer;
+	PFNGLFRAMEBUFFERTEXTURE2DPROC    gl_FramebufferTexture2D;
+	PFNGLCHECKFRAMEBUFFERSTATUSPROC  gl_CheckFramebufferStatus;
 
 	// Compile shader
-	bool compile(uint type, uint &shader, const char *code, string text) {
-		shader = gl_CreateShader(type);
+	uint compile(uint type, const char *code, string text) {
+		uint shader = gl_CreateShader(type);
 		gl_ShaderSource(shader, 1, &code, nullptr);
 		gl_CompileShader(shader);
 
 		int done;
 		gl_GetShaderiv(shader, GL_COMPILE_STATUS, &done);
-
 		if (!done) {
 			showMessage(text + " shader - compile error");
+			shader = 0;
 		}
-		return done != 0;
+
+		return shader;
 	}
 
 	// Link shader
-	bool link(uint &program, const char *vertexCode, const char *fragmentCode) {
-		uint vertex, fragment;
-		if (!compile(GL_VERTEX_SHADER,   vertex,   vertexCode,   "Vertex")
-		 || !compile(GL_FRAGMENT_SHADER, fragment, fragmentCode, "Fragment")) {
-			return false;
+	uint link(const char *vertexCode, const char *fragmentCode) {
+		uint program  = 0;
+		uint vertex   = compile(GL_VERTEX_SHADER,   vertexCode,   "Vertex");
+		uint fragment = compile(GL_FRAGMENT_SHADER, fragmentCode, "Fragment");
+
+		if (vertex && fragment) {
+			program = gl_CreateProgram();
+			gl_AttachShader(program, vertex);
+			gl_AttachShader(program, fragment);
+			gl_LinkProgram(program);
+
+			int done;
+			gl_GetProgramiv(program, GL_LINK_STATUS, &done);
+			if (!done) {
+				showMessage("Shaders link error");
+				program = 0;
+			}
 		}
 
-		int done;
-		program = gl_CreateProgram();
-		gl_AttachShader(program, vertex);
-		gl_AttachShader(program, fragment);
-		gl_LinkProgram(program);
-		gl_GetProgramiv(program, GL_LINK_STATUS, &done);
-		if (!done) {
-			showMessage("Shaders link error");
-		}
-		return done != 0;
+		return program;
 	}
 
 	// Initialization
@@ -121,28 +128,7 @@ public:
 		gl_FramebufferTexture2D    = (PFNGLFRAMEBUFFERTEXTURE2DPROC)    wglGetProcAddress("glFramebufferTexture2D");
 		gl_CheckFramebufferStatus  = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)  wglGetProcAddress("glCheckFramebufferStatus");
 
-		// Vertex 1
-		const char *vertexCode = CONVERT_TO_STRING(
-			void main(void) {
-				gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-				gl_FrontColor = gl_Color;
-				gl_TexCoord[0] = gl_MultiTexCoord0;
-				gl_Position.z = 0.5 + gl_Position.y / 4.0 - gl_Vertex.z / 1024.0;
-				gl_Position.y += gl_Vertex.z / 300.0 * gl_ModelViewMatrix[2][2];
-			}
-		);
-
-		// Fragment 1
-		const char *fragmentCode = CONVERT_TO_STRING(
-			uniform sampler2D colorBuffer;
-			uniform sampler2D depthBuffer;
-			void main(void) {
-				// vec4(gl_FragCoord.z, gl_FragCoord.z, gl_FragCoord.z ,1.0);
-				gl_FragColor = texture2D(colorBuffer, gl_TexCoord[0]) * gl_Color;
-			}
-		);
-
-		// Vertex 2
+		// Vertex
 		const char *vertexCode2 = CONVERT_TO_STRING(
 			void main(void) {
 				gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
@@ -151,18 +137,17 @@ public:
 			}
 		);
 
-		// Fragment 2
+		// Fragment
 		const char *fragmentCode2 = CONVERT_TO_STRING(
 			uniform sampler2D colorBuffer;
 			uniform sampler2D depthBuffer;
 			void main(void) {
-				gl_FragColor = texture2D(colorBuffer, gl_TexCoord[0].xy - mod(gl_TexCoord[0].xy, 6.0 / 2048.0)) * gl_Color;
+				gl_FragColor = texture2D(colorBuffer, gl_TexCoord[0]) * gl_Color;
 			}
 		);
 
 		// Shaders
-		if (!link(program,  vertexCode,  fragmentCode))  return;
-		if (!link(program2, vertexCode2, fragmentCode2)) return;
+		if (!(program2 = link(vertexCode2, fragmentCode2))) return;
 
 		// Texture to store RGBA data
 		glGenTextures(1, &texture);
@@ -182,7 +167,7 @@ public:
 		gl_GenFramebuffers(1, &fbo); 
 		gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, fbo);
 		gl_FramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture, 0);
-		gl_FramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rbo, 0);
+		gl_FramebufferTexture2D(GL_FRAMEBUFFER,     GL_DEPTH_ATTACHMENT,      GL_TEXTURE_2D, rbo,     0);
 
 		// Check for errors
 		GLenum status = gl_CheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -206,6 +191,16 @@ public:
 		gl_Uniform1i(gl_GetUniformLocation(program2, "colorBuffer"), 0);
 
 		// Back to default shader
-		gl_UseProgram(0);
+		shader = 0;
+
+		// Back to default buffer
+		gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
 	}
+	
+	// Use program
+	void operator = (uint _program) {
+		gl_UseProgram(program = _program);
+	}
+
+
 } shader;

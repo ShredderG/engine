@@ -8,8 +8,8 @@ private:
 	static constexpr uint   BUFFER_SIZE  = 1024 * 1024;
 	static constexpr uint   MAX_CLIENTS  = 8;
 
-	char bufferRead[BUFFER_SIZE]  = { 0 };
-	char bufferWrite[BUFFER_SIZE] = { 0 };
+	char bufferRead[BUFFER_SIZE];//  = { 0 };
+	char bufferWrite[BUFFER_SIZE];// = { 0 };
 
 	uint bufferReadIndex  = 0;
 	uint bufferWriteIndex = 0;

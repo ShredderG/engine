@@ -1,3 +1,4 @@
+// Room
 class Room {
 private:
 	void(*function_)()  = nullptr;
@@ -18,10 +19,12 @@ public:
 	void operator = (void(*function)()) {
 		hasTransition_ = true;
 		function_ = function;
-		for (Engine::Object* ptr = Engine::objectList; ptr; ptr = ptr->GAME_right) {
-			if (!ptr->isPersistent) {
-				ptr->destroy();
-			}
+
+		// Destroy non-persistent objects
+		Engine::Object* ptr = Engine::objectList;
+		while (ptr != nullptr) {
+			if (!ptr->isPersistent) ptr->destroy();
+			ptr = ptr->GAME_right;
 		}
 	}
 
