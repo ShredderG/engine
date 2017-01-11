@@ -12,8 +12,8 @@ enum MouseButton : uchar {
 // Mouse
 class Mouse {
 public:
-	short x;
-	short y;
+	int  x;
+	int  y;
 	bool isReleased[3];
 	bool isPressed[3];
 	bool isHeld[3];
@@ -33,7 +33,7 @@ public:
 	}
 
 	// Move mouse
-	void move(short _x, short _y) {
+	void move(int _x, int _y) {
 		if (GetActiveWindow()) {
 			POINT point;
 			GetCursorPos(&point);

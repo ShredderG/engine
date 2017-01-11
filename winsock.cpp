@@ -2,31 +2,31 @@
 class Winsock {
 private:
 	// Settings
-	#define DEFAULT_IP "127.0.1.0"
+	static constexpr char*  DEFAULT_IP   = "127.0.1.0";
 	static constexpr ushort DEFAULT_PORT = 6881;
 	static constexpr ushort WINS_VERSION = 0x0101;
 	static constexpr uint   BUFFER_SIZE  = 1024 * 1024;
-	static constexpr uint   MAX_CLIENTS  = 8;
 
-	char bufferRead[BUFFER_SIZE];//  = { 0 };
-	char bufferWrite[BUFFER_SIZE];// = { 0 };
+	char bufferRead_[BUFFER_SIZE];//  = { 0 };
+	char bufferWrite_[BUFFER_SIZE];// = { 0 };
 
-	uint bufferReadIndex  = 0;
-	uint bufferWriteIndex = 0;
+	int bufferReadSize_   = 0;
+	int bufferReadIndex_  = 0;
+	int bufferWriteIndex_ = 0;
 
 	// Client/server socket
-	SOCKET Socket = INVALID_SOCKET;
-	
+	SOCKET Socket_ = INVALID_SOCKET;
+
 	// Start winsock
 	bool initialize() {
 		// WSAStartup
-		if (WSAStartup(WINS_VERSION, (WSADATA *)bufferRead) != NO_ERROR) {
+		if (WSAStartup(WINS_VERSION, (WSADATA*)bufferRead_) != NO_ERROR) {
 			showError("WSAStartup");
 			return false;
 		}
 		
 		// Create socket
-		if ((Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET) {
+		if ((Socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) == INVALID_SOCKET) {
 			showError("socket");
 			WSACleanup();
 			return false;
@@ -37,19 +37,31 @@ private:
 
 	// Show error
 	void showError(string function) {
-		showMessage("Error " + function + " " + to_string(WSAGetLastError()));
+		showMessage("Error " + function + " #" + to_string(WSAGetLastError()));
 	}
 
 public:
 	// Clients sockets for server
-	SOCKET clientSockets[MAX_CLIENTS] = { INVALID_SOCKET };
+	static constexpr uint   MAX_CLIENTS = 7;
+	SOCKET clientSockets[MAX_CLIENTS] = {
+		INVALID_SOCKET,
+		INVALID_SOCKET,
+		INVALID_SOCKET,
+		INVALID_SOCKET,
+		INVALID_SOCKET,
+		INVALID_SOCKET,
+		INVALID_SOCKET
+	};
+
+	// running or not
+	bool server = false;
+	bool client = false;
 
 	// Create server
 	bool startServer(ushort port = DEFAULT_PORT) {
 		// Initialize WS
-		if (!initialize()) {
-			return false;
-		}
+		if (server || client) return false;
+		if (!initialize())    return false;
 
 		// Local address
 		SOCKADDR_IN localhost;
@@ -58,28 +70,34 @@ public:
 		localhost.sin_addr.s_addr = INADDR_ANY;
 		
 		// Bind socket
-		if (bind(Socket, (sockaddr *)&localhost, sizeof(localhost)) == SOCKET_ERROR) {
+		if (bind(Socket_, (sockaddr*)&localhost, sizeof(localhost)) == SOCKET_ERROR) {
 			showError("bind");
-			closeSocket();
+			// closeSocket(); // throws shutdown error also, after previous message
+
+			if (closesocket(Socket_) == SOCKET_ERROR) {
+				showError("closesocket");
+			}
+			Socket_ = INVALID_SOCKET;
+			WSACleanup();
+
 			return false;
 		}
 
 		// Wait for clients
-		if (listen(Socket, MAX_CLIENTS) == SOCKET_ERROR) {
+		if (listen(Socket_, MAX_CLIENTS) == SOCKET_ERROR) {
 			showError("listen");
 			closeSocket();
 			return false;
 		}
 
-		return true;
+		return server = true;
 	}
 
 	// Connect to server
-	bool startClient(char *ip = DEFAULT_IP, ushort port = DEFAULT_PORT) {
+	bool startClient(char* ip = DEFAULT_IP, ushort port = DEFAULT_PORT) {
 		// Initialize WS
-		if (!initialize()) {
-			return false;
-		}
+		if (server || client) return false;
+		if (!initialize())    return false;
 
 		// Destination address
 		SOCKADDR_IN destination;
@@ -95,34 +113,73 @@ public:
 		}
 
 		// Connect to server
-		if (connect(Socket, (sockaddr *)&destination, sizeof(destination)) == SOCKET_ERROR) {
+		if (connect(Socket_, (sockaddr*)&destination, sizeof(destination)) == SOCKET_ERROR) {
 			showError("connect");
 			closeSocket();
 			return false;
 		}
 
+		return client = true;
+	}
+
+	// Shutdown server
+	bool shutdown() {
+		if (!server) {
+			return false;
+		}
+
+		closeSocketAll();
+		closeSocket();
+		return true;
+	}
+
+	// Disconnect from server
+	bool disconnect() {
+		if (!client) {
+			return false;
+		}
+
+		closeSocket();
 		return true;
 	}
 
 	// Close client/server socket
 	void closeSocket() {
-		closeSocket(Socket);
+		closeSocket(Socket_);
 		WSACleanup();
+	}
+
+	// Close client/server socket
+	void closeSocketAll() {
+		for (int i = 0; i < MAX_CLIENTS; i++) {
+			closeSocket(clientSockets[i]);
+		}
 	}
 
 	// Close concrete socket
 	void closeSocket(SOCKET &Socket) {
-		constexpr int SD_BOTH = 2;
-		if (shutdown(Socket, SD_BOTH) == SOCKET_ERROR) {
-			showError("shutdown");
-		}
+		if (Socket != INVALID_SOCKET) {
+			// Do not process server Socket
+			if (!(Socket == Socket_ && server)) {
+				constexpr int SD_BOTH = 2;
+				if (::shutdown(Socket, SD_BOTH) == SOCKET_ERROR) {
+					showError("shutdown");
+				}
 
-		while (recv(Socket, bufferRead, BUFFER_SIZE, 0) != SOCKET_ERROR);
+				while (recv(Socket, bufferRead_, BUFFER_SIZE, 0) != SOCKET_ERROR);
+			}
 
-		if (closesocket(Socket) == SOCKET_ERROR) {
-			showError("closesocket");
+			// is it shutdown?
+			if (Socket == Socket_) {
+				server = client = false;
+			}
+
+			if (closesocket(Socket) == SOCKET_ERROR) {
+				showError("closesocket");
+			}
+
+			Socket = INVALID_SOCKET;
 		}
-		Socket = INVALID_SOCKET;
 	}
 
 	// Accept new client 
@@ -132,7 +189,7 @@ public:
 
 		fd_set readFDs;
 		FD_ZERO(&readFDs);
-		FD_SET(Socket, &readFDs);
+		FD_SET(Socket_, &readFDs);
 
 		// If there is a new one
 		int sel = select(0, &readFDs, NULL, NULL, &time);
@@ -146,7 +203,7 @@ public:
 			SOCKADDR_IN client_addr;
 			int client_addr_size = sizeof(client_addr);
 
-			SOCKET SocketNew = accept(Socket, (sockaddr *)&client_addr, &client_addr_size);
+			SOCKET SocketNew = accept(Socket_, (sockaddr*)&client_addr, &client_addr_size);
 			if (SocketNew == INVALID_SOCKET) {
 				showError("accept");
 				return INVALID_SOCKET;
@@ -166,19 +223,24 @@ public:
 	/************** MESSAGES ****************/
 	/****************************************/
 
-	// Clear buffer
+	// Clear write buffer
 	inline void clearBuffer() {
-		bufferWriteIndex = 0;
+		bufferWriteIndex_ = 0;
+	}
+
+	// Check read buffer
+	inline bool checkBuffer() {
+		return bufferReadIndex_ < bufferReadSize_;
 	}
 
 	// Receive message from server/client
 	int getMessage() {
-		return getMessage(Socket);
+		return getMessage(Socket_);
 	}
 
 	// Receive message from concrete socket
 	int getMessage(SOCKET Socket) {
-		bufferReadIndex = 0;
+		bufferReadIndex_ = 0;
 
 		timeval time;
 		time.tv_sec = time.tv_usec = 0;
@@ -192,14 +254,14 @@ public:
 			showError("select");
 		}
 		if (n > 0) {
-			n = recv(Socket, bufferRead, BUFFER_SIZE, 0);
+			n = recv(Socket, bufferRead_, BUFFER_SIZE, 0);
 		}
-		return n;
+		return bufferReadSize_ = n;
 	}
 
 	// Send message to server/client
 	void sendMessage() {
-		sendMessage(Socket);
+		sendMessage(Socket_);
 	}
 
 	// Send message to all clients
@@ -219,10 +281,10 @@ public:
 	}
 
 	// Send message to concrete socket
-	void sendMessage(SOCKET Socket) {
+	void sendMessage(SOCKET &Socket) {
 		if (Socket != INVALID_SOCKET) {
-			if (bufferWriteIndex > 0) {
-				if (send(Socket, bufferWrite, bufferWriteIndex, 0) == SOCKET_ERROR) {
+			if (bufferWriteIndex_ > 0) {
+				if (send(Socket, bufferWrite_, bufferWriteIndex_, 0) == SOCKET_ERROR) {
 					showError("send");
 				}
 			}
@@ -234,27 +296,27 @@ public:
 	/****************************************/
 
 	char read1() {
-		return bufferRead[bufferReadIndex++];
+		return bufferRead_[bufferReadIndex_++];
 	}
 
 	short read2() {
-		bufferReadIndex += 2;
-		return *(short*)&bufferRead[bufferReadIndex - 2];
+		bufferReadIndex_ += 2;
+		return *(short*)&bufferRead_[bufferReadIndex_ - 2];
 	}
 
 	int read4() {
-		bufferReadIndex += 4;
-		return *(int*)&bufferRead[bufferReadIndex - 4];
+		bufferReadIndex_ += 4;
+		return *(int*)&bufferRead_[bufferReadIndex_ - 4];
 	}
 
 	float read4f() {
-		bufferReadIndex += 4;
-		return *(float*)&bufferRead[bufferReadIndex - 4];
+		bufferReadIndex_ += 4;
+		return *(float*)&bufferRead_[bufferReadIndex_ - 4];
 	}
 
 	char* readStr() {
-		char *text = (char*)&bufferRead[bufferReadIndex];
-		bufferReadIndex += strlen(text) + 1;
+		char *text = (char*)&bufferRead_[bufferReadIndex_];
+		bufferReadIndex_ += strlen(text) + 1;
 		return text;
 	}
 
@@ -263,30 +325,30 @@ public:
 	/****************************************/
 
 	void write1(char a) {
-		bufferWrite[bufferWriteIndex++] = a;
+		bufferWrite_[bufferWriteIndex_++] = a;
 	}
 
 	void write2(short a) {
 		for (char i = 0; i < 2; i++) {
-			bufferWrite[bufferWriteIndex++] = *((char*)&a + i);
+			bufferWrite_[bufferWriteIndex_++] = *((char*)&a + i);
 		}
 	}
 
 	void write4(int a) {
 		for (char i = 0; i < 4; i++) {
-			bufferWrite[bufferWriteIndex++] = *((char*)&a + i);
+			bufferWrite_[bufferWriteIndex_++] = *((char*)&a + i);
 		}
 	}
 
 	void write4f(float a) {
 		for (char i = 0; i < 4; i++) {
-			bufferWrite[bufferWriteIndex++] = *((char*)&a + i);
+			bufferWrite_[bufferWriteIndex_++] = *((char*)&a + i);
 		}
 	}
 
 	void writeStr(string text) {
 		for (uint i = 0, length = text.size(); i <= length; i++) {
-			bufferWrite[bufferWriteIndex++] = (char)text[i];
+			bufferWrite_[bufferWriteIndex_++] = (char)text[i];
 		}
 	}
 

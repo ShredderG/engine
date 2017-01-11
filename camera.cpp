@@ -53,7 +53,7 @@ public:
 	}
 
 	// 2d mode
-	void set2d(short x1, short y1, short x2, short y2) {
+	void set2d(int x1, int y1, int x2, int y2) {
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();

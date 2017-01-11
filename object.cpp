@@ -128,8 +128,15 @@ namespace Engine {
 	void draw() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glDisable(GL_TEXTURE_2D);
+		// Draw
+		Object* ptr = objectList;
+		while (ptr != nullptr) {
+			ptr->GAME_draw();
+			ptr = ptr->GAME_right;
+		}
 
+		/*
+		glDisable(GL_TEXTURE_2D);
 		camera.set2d(0, 0, window.width, window.height);
 		glBegin(GL_QUADS);
 		glColor3f(1, 1, 1); glVertex2f(0, 0);
@@ -138,14 +145,7 @@ namespace Engine {
 		glColor3f(1, 1, 0); glVertex2f(90, 0);
 		glEnd();
 		camera.set3d();
-
-		/*
-		// Draw
-		Object* ptr = objectList;
-		while (ptr != nullptr) {
-			ptr->GAME_draw();
-			ptr = ptr->GAME_right;
-		}		
+		glEnable(GL_TEXTURE_2D);
 		*/
 
 		SwapBuffers(window.hDC);

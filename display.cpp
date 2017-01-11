@@ -1,8 +1,8 @@
 // Display
 class Display {
 public:
-	short width;
-	short height;
+	int width;
+	int height;
 
 	Display() :
 		width(GetSystemMetrics(SM_CXSCREEN)),

@@ -21,7 +21,7 @@ void showMessage(string text) {
 
 // string to int
 int to_int(string value) {
-	return stoi(value);
+	return stoi("0" + value);
 }
 
 // string to float

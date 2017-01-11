@@ -3,6 +3,7 @@
 #pragma comment (lib, "opengl32.lib")
 #pragma comment (lib, "glu32.lib")
 #pragma comment (lib, "wsock32.lib")
+#define _CRT_SECURE_NO_WARNINGS
 
 // Includes
 #include <winsock.h>
@@ -25,13 +26,14 @@ typedef unsigned int   uint;
 #include "functions.cpp"
 #include "sfx.cpp"
 #include "winsock.cpp"
-#include "keyboard.cpp"
+#include "keyboard.cpp" // TODO: check numpad keys
 #include "mouse.cpp"
 #include "camera.cpp"
 #include "display.cpp"
-#include "texture.cpp"
 #include "window.cpp"
 #include "shader.cpp"
+#include "target.cpp"
+#include "texture.cpp"
 #include "files/textures.cpp"
 #include "files/objects.cpp"
 
@@ -43,14 +45,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		(display.height - GAME_HEIGHT) / 2,
 		GAME_WIDTH, GAME_HEIGHT)) {
 		return 0;
-	}	
+	}
 
 	// Seed random generator
 	srand((unsigned)time(nullptr));
 
 	// Load textures, shader, room
 	Engine::loadTextures();
-	shader.initialize();
 	room = r_start;
 
 	// Variables

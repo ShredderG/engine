@@ -4,6 +4,45 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 // Prototype draw
 namespace Engine { void draw(); }
 
+// glew Functions
+PFNGLCREATEPROGRAMPROC           gl_CreateProgram;
+PFNGLDELETEPROGRAMPROC           gl_DeleteProgram;
+PFNGLUSEPROGRAMPROC              gl_UseProgram;
+PFNGLATTACHSHADERPROC            gl_AttachShader;
+PFNGLDETACHSHADERPROC            gl_DetachShader;
+PFNGLLINKPROGRAMPROC             gl_LinkProgram;
+PFNGLGETPROGRAMIVPROC            gl_GetProgramiv;
+PFNGLGETSHADERINFOLOGPROC        gl_GetShaderInfoLog;
+PFNGLGETUNIFORMLOCATIONPROC      gl_GetUniformLocation;
+PFNGLUNIFORM1IPROC               gl_Uniform1i;
+PFNGLUNIFORM2IPROC               gl_Uniform2i;
+PFNGLUNIFORM3IPROC               gl_Uniform3i;
+PFNGLUNIFORM4IPROC               gl_Uniform4i;
+PFNGLUNIFORM1FPROC               gl_Uniform1f;
+PFNGLUNIFORM2FPROC               gl_Uniform2f;
+PFNGLUNIFORM3FPROC               gl_Uniform3f;
+PFNGLUNIFORM4FPROC               gl_Uniform4f;
+PFNGLUNIFORMMATRIX4FVPROC        gl_UniformMatrix4fv;
+PFNGLGETATTRIBLOCATIONPROC       gl_GetAttribLocation;
+PFNGLVERTEXATTRIB1FPROC          gl_VertexAttrib1f;
+PFNGLVERTEXATTRIB1FVPROC         gl_VertexAttrib1fv;
+PFNGLVERTEXATTRIB2FVPROC         gl_VertexAttrib2fv;
+PFNGLVERTEXATTRIB3FVPROC         gl_VertexAttrib3fv;
+PFNGLVERTEXATTRIB4FVPROC         gl_VertexAttrib4fv;
+PFNGLENABLEVERTEXATTRIBARRAYPROC gl_EnableVertexAttribArray;
+PFNGLBINDATTRIBLOCATIONPROC      gl_BindAttribLocation;
+PFNGLACTIVETEXTUREPROC           gl_ActiveTexture;
+PFNGLCREATESHADERPROC            gl_CreateShader;
+PFNGLDELETESHADERPROC            gl_DeleteShader;
+PFNGLSHADERSOURCEPROC            gl_ShaderSource;
+PFNGLCOMPILESHADERPROC           gl_CompileShader;
+PFNGLGETSHADERIVPROC             gl_GetShaderiv;
+PFNGLGENFRAMEBUFFERSPROC         gl_GenFramebuffers;
+PFNGLBINDFRAMEBUFFERPROC         gl_BindFramebuffer;
+PFNGLFRAMEBUFFERTEXTURE2DPROC    gl_FramebufferTexture2D;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC  gl_CheckFramebufferStatus;
+PFNGLDELETEFRAMEBUFFERSPROC      gl_DeleteFramebuffers;
+
 class Window {
 private:
 	HGLRC     hRC       = nullptr; // Постоянный контекст рендеринга
@@ -14,33 +53,33 @@ private:
 	friend void Engine::draw();
 
 public:
-	short x;
-	short y;
-	short width;
-	short height;
+	int x;
+	int y;
+	int width;
+	int height;
 	string title;
 	bool hasFocus;
 	bool isFullscreen;
 
 	// Move
-	void move(short _x, short _y) {
-		SetWindowPos(hWnd, hWnd, x = _x, y = _y, width, height, SWP_NOZORDER | SWP_NOSIZE);
+	void move(int x, int y) {
+		SetWindowPos(hWnd, hWnd, x, y, width, height, SWP_NOZORDER | SWP_NOSIZE);
 	}
 
 	// Resize
-	void resize(ushort _width, ushort _height) {
+	void resize(int width, int height) {
 		RECT client, window;
 		GetClientRect(hWnd, &client);
 		GetWindowRect(hWnd, &window);
 
 		SetWindowPos(hWnd, hWnd, x, y,
-			_width  + window.right  - window.left - client.right,
-			_height + window.bottom - window.top  - client.bottom,
+			width  + window.right  - window.left - client.right,
+			height + window.bottom - window.top  - client.bottom,
 			SWP_NOZORDER | SWP_NOMOVE);
 	}
 
 	// Update
-	void update() {
+	void update(int width, int height) {
 		glViewport(0, 0, width, height);
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -69,6 +108,45 @@ public:
 		glDepthFunc(GL_LEQUAL);
 		glClearDepth(1.0);
 		glEnable(GL_BLEND);
+
+		// glew functions
+		gl_CreateProgram           = (PFNGLCREATEPROGRAMPROC)           wglGetProcAddress("glCreateProgram");
+		gl_DeleteProgram           = (PFNGLDELETEPROGRAMPROC)           wglGetProcAddress("glDeleteProgram");
+		gl_UseProgram              = (PFNGLUSEPROGRAMPROC)              wglGetProcAddress("glUseProgram");
+		gl_AttachShader            = (PFNGLATTACHSHADERPROC)            wglGetProcAddress("glAttachShader");
+		gl_DetachShader            = (PFNGLDETACHSHADERPROC)            wglGetProcAddress("glDetachShader");
+		gl_LinkProgram             = (PFNGLLINKPROGRAMPROC)             wglGetProcAddress("glLinkProgram");
+		gl_GetProgramiv            = (PFNGLGETPROGRAMIVPROC)            wglGetProcAddress("glGetProgramiv");
+		gl_GetShaderInfoLog        = (PFNGLGETSHADERINFOLOGPROC)        wglGetProcAddress("glGetShaderInfoLog");
+		gl_GetUniformLocation      = (PFNGLGETUNIFORMLOCATIONPROC)      wglGetProcAddress("glGetUniformLocation");
+		gl_Uniform1i               = (PFNGLUNIFORM1IPROC)               wglGetProcAddress("glUniform1i");
+		gl_Uniform2i               = (PFNGLUNIFORM2IPROC)               wglGetProcAddress("glUniform2i");
+		gl_Uniform3i               = (PFNGLUNIFORM3IPROC)               wglGetProcAddress("glUniform3i");
+		gl_Uniform4i               = (PFNGLUNIFORM4IPROC)               wglGetProcAddress("glUniform4i");
+		gl_Uniform1f               = (PFNGLUNIFORM1FPROC)               wglGetProcAddress("glUniform1f");
+		gl_Uniform2f               = (PFNGLUNIFORM2FPROC)               wglGetProcAddress("glUniform2f");
+		gl_Uniform3f               = (PFNGLUNIFORM3FPROC)               wglGetProcAddress("glUniform3f");
+		gl_Uniform4f               = (PFNGLUNIFORM4FPROC)               wglGetProcAddress("glUniform4f");
+		gl_UniformMatrix4fv        = (PFNGLUNIFORMMATRIX4FVPROC)        wglGetProcAddress("glUniformMatrix4fv");
+		gl_GetAttribLocation       = (PFNGLGETATTRIBLOCATIONPROC)       wglGetProcAddress("glGetAttribLocation");
+		gl_VertexAttrib1f          = (PFNGLVERTEXATTRIB1FPROC)          wglGetProcAddress("glVertexAttrib1f");
+		gl_VertexAttrib1fv         = (PFNGLVERTEXATTRIB1FVPROC)         wglGetProcAddress("glVertexAttrib1fv");
+		gl_VertexAttrib2fv         = (PFNGLVERTEXATTRIB2FVPROC)         wglGetProcAddress("glVertexAttrib2fv");
+		gl_VertexAttrib3fv         = (PFNGLVERTEXATTRIB3FVPROC)         wglGetProcAddress("glVertexAttrib3fv");
+		gl_VertexAttrib4fv         = (PFNGLVERTEXATTRIB4FVPROC)         wglGetProcAddress("glVertexAttrib4fv");
+		gl_EnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC) wglGetProcAddress("glEnableVertexAttribArray");
+		gl_BindAttribLocation      = (PFNGLBINDATTRIBLOCATIONPROC)      wglGetProcAddress("glBindAttribLocation");
+		gl_ActiveTexture           = (PFNGLACTIVETEXTUREPROC)           wglGetProcAddress("glActiveTexture");
+		gl_CreateShader            = (PFNGLCREATESHADERPROC)            wglGetProcAddress("glCreateShader");
+		gl_DeleteShader            = (PFNGLDELETESHADERPROC)            wglGetProcAddress("glDeleteShader");
+		gl_ShaderSource            = (PFNGLSHADERSOURCEPROC)            wglGetProcAddress("glShaderSource");
+		gl_CompileShader           = (PFNGLCOMPILESHADERPROC)           wglGetProcAddress("glCompileShader");
+		gl_GetShaderiv             = (PFNGLGETSHADERIVPROC)             wglGetProcAddress("glGetShaderiv");
+		gl_GenFramebuffers         = (PFNGLGENFRAMEBUFFERSPROC)         wglGetProcAddress("glGenFramebuffers");
+		gl_BindFramebuffer         = (PFNGLBINDFRAMEBUFFERPROC)         wglGetProcAddress("glBindFramebuffer");
+		gl_FramebufferTexture2D    = (PFNGLFRAMEBUFFERTEXTURE2DPROC)    wglGetProcAddress("glFramebufferTexture2D");
+		gl_CheckFramebufferStatus  = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)  wglGetProcAddress("glCheckFramebufferStatus");
+		gl_DeleteFramebuffers      = (PFNGLDELETEFRAMEBUFFERSPROC)      wglGetProcAddress("glDeleteFramebuffers");
 	}
 
 	// Change window mode
@@ -78,8 +156,8 @@ public:
 	}
 
 	// Set title
-	void setTitle(string _title) {
-		title = _title;
+	void setTitle(string title) {
+		this->title = title;
 		SetWindowText(hWnd, title.c_str());
 	}
 
@@ -115,13 +193,13 @@ public:
 	}
 
 	// Create
-	bool create(string _title, bool _fullscreen, short _x, short _y, short _width, short _height) {
-		title        = _title;
-		isFullscreen = _fullscreen;
-		x            = _x;
-		y            = _y;
-		width        = _width;
-		height       = _height;
+	bool create(string title, bool fullscreen, int x, int y, int width, int height) {
+		this->title        = title;
+		this->isFullscreen = fullscreen;
+		this->x            = x;
+		this->y            = y;
+		this->width        = width;
+		this->height       = height;
 		if (isFullscreen) {
 			x = y = 0;
 		}
@@ -216,7 +294,7 @@ public:
 							ShowWindow(hWnd, SW_SHOW);    // Показать окно
 							SetForegroundWindow(hWnd);    // Слегка повысим приоритет
 							SetFocus(hWnd);               // Установить фокус клавиатуры на наше окно
-							update();                     // Перспектива
+							update(width, height);        // Перспектива
 							initialize();                 // Прочее
 							return true;                  // Окно создано
 						} else showMessage("Can't Activate The GL Rendering Context.");
@@ -305,7 +383,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_SIZE:
 		window.width  = LOWORD(lParam);
 		window.height = HIWORD(lParam);
-		window.update();
+		window.update(window.width, window.height);
 		return 0;
 
 		// Window moved
