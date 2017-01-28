@@ -6,8 +6,7 @@
 ///////////////////////////////////
 
 // Sfx
-struct Sfx {
-private:
+namespace Sfx {
 	int wave_type;
 
 	float p_base_freq;
@@ -41,11 +40,11 @@ private:
 	float p_arp_speed;
 	float p_arp_mod;
 
-	float master_vol;
+	float master_vol = (float)0.05;
 
-	float sound_vol;
+	float sound_vol = 0.5;
 
-	bool playing_sample;
+	bool playing_sample = false;
 	int phase;
 	double fperiod;
 	double fmaxperiod;
@@ -81,15 +80,15 @@ private:
 	int arp_limit;
 	double arp_mod;
 
-	float* vselected;
-	int vcurbutton;
+	float* vselected = nullptr;
+	int vcurbutton = -1;
 
-	int wav_bits;
-	int wav_freq;
+	int wav_bits = 16;
+	int wav_freq = 44100;
 
 	int   file_sampleswritten;
-	float filesample;
-	int   fileacc;
+	float filesample = 0.0;
+	int   fileacc = 0;
 
 	void ResetSample(bool restart) {
 		if (!restart)
@@ -378,19 +377,6 @@ private:
 		return dword + 44;
 	}
 
-public:
-	Sfx() {
-		master_vol = (float)0.05;
-		sound_vol = 0.5;
-		playing_sample = false;
-		vselected = nullptr;
-		vcurbutton = -1;
-		wav_bits = 16;
-		wav_freq = 44100;
-		filesample = 0.0;
-		fileacc = 0;
-	}
-
 	char *create(
 		int   _wave_type,
 		uchar _sound_vol,
@@ -460,10 +446,9 @@ public:
 		remove("sound.wav");
 		return buffer;
 	}
+}
 
-} sfx;
-
-char* soundJump = sfx.create(
+char* soundJump = Sfx::create(
 	0,
 	float_to_char((float)0.500000),
 	float_to_char((float)0.408990),

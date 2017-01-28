@@ -3,18 +3,22 @@
 for (OBJECT_##object* object = ::object;                           \
     object > (OBJECT_##object*)0x0000FFFF;                         \
     object = (OBJECT_##object*)object->GAME_right)                 \
-    if (object->GAME_id() != ::object->OBJECT_##object::GAME_id()) \
+    if (((Engine::Object*)object)->GAME_id() != ::object->OBJECT_##object::GAME_id()) \
         break;                                                     \
     else if (object->isActive)
 
 // is object exists? macros
 #define objectExists(object) (object > (Engine::Object*)0x0000FFFF)
 
-// Cast & get address for the 4th parameter
-#define objectCreate(x, y, z, object) _objectCreate(x, y, z, (Engine::Object**)&object);
+// Cast & get address for the 1st parameter
+#define objectCreate(x, y, z, object) ((OBJECT_##object*)_objectCreate(x, y, z, (Engine::Object**)&object))
 
 // Engine
 namespace Engine {
+	float x;
+	float y;
+	float z;
+
 	// Object
 	class Object {
 	public:
@@ -36,7 +40,11 @@ namespace Engine {
 			isSolid(false),
 			isPersistent(false),
 			zIndex(0) {
-			// nothing here
+			// Set some vars
+			object = this;
+			x = Engine::x;
+			y = Engine::y;
+			z = Engine::z;
 		}
 
 		// Destructor
@@ -74,7 +82,7 @@ namespace Engine {
 				GAME_right = objectList;
 				while (GAME_right != nullptr) {
 					if (zIndex < GAME_right->zIndex) {
-						GAME_left = GAME_right;
+						GAME_left  = GAME_right;
 						GAME_right = GAME_right->GAME_right;
 					} else break;
 				}
@@ -90,7 +98,7 @@ namespace Engine {
 		virtual void     GAME_step()     = 0;
 		virtual void     GAME_draw()     = 0;
 		virtual ObjectId GAME_id() const = 0;
-	} *objectList = nullptr;
+	} *objectList = nullptr, *object = nullptr;
 
 	// Delete everything
 	void deleteObjects() {
@@ -120,8 +128,8 @@ namespace Engine {
 		}
 
 		// Reset mouse & keyboard
-		keyboard.reset();
-		mouse.reset();
+		Keyboard::reset();
+		Mouse::reset();
 	}
 
 	// Global draw
@@ -135,48 +143,6 @@ namespace Engine {
 			ptr = ptr->GAME_right;
 		}
 
-		/*
-		glDisable(GL_TEXTURE_2D);
-		camera.set2d(0, 0, window.width, window.height);
-		glBegin(GL_QUADS);
-		glColor3f(1, 1, 1); glVertex2f(0, 0);
-		glColor3f(0, 1, 1); glVertex2f(0, 90);
-		glColor3f(1, 0, 1); glVertex2f(90, 90);
-		glColor3f(1, 1, 0); glVertex2f(90, 0);
-		glEnd();
-		camera.set3d();
-		glEnable(GL_TEXTURE_2D);
-		*/
-
-		SwapBuffers(window.hDC);
-
-		/*
-		shader.gl_UseProgram(shader.program);
-		shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, shader.fbo);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		for (Object *ptr = objectList; ptr; ptr = ptr->GAME_right) {
-			ptr->GAME_draw();
-		}
-
-		shader.gl_UseProgram(shader.program2);
-		shader.gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		camera.set2d(0, 0, window.width, window.height);
-
-		glBindTexture(GL_TEXTURE_2D, shader.texture);
-		glBegin(GL_QUADS);
-		glColor4f(1.0, 1.0, 1.0, 1.0);
-		glTexCoord2f(0, window.height / (float)shader.SIZE); glVertex2f(0, 0);
-		glTexCoord2f(0, 0); glVertex2f(0, window.height);
-		glTexCoord2f(window.width / (float)shader.SIZE, 0); glVertex2f(window.width, window.height);
-		glTexCoord2f(window.width / (float)shader.SIZE, window.height / (float)shader.SIZE); glVertex2f(window.width, 0);
-		glEnd();
-
-		camera.set3d();
-
-		SwapBuffers(window.hDC);
-		*/
+		SwapBuffers(Window::hDC);
 	}
 };

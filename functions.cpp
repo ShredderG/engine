@@ -60,17 +60,17 @@ float random(float from, float to) {
 }
 
 // Length direction x
-float lenDirX(float length, float xAngle, float yAngle = 90.0) {
+float xAngleLength(float length, float xAngle, float yAngle = 90.0) {
 	return length * cos(xAngle / PI_180) * sin(yAngle / PI_180);
 }
 
 // Length direction y
-float lenDirY(float length, float xAngle, float yAngle = 90.0) {
+float yAngleLength(float length, float xAngle, float yAngle = 90.0) {
 	return length * sin(xAngle / PI_180) * sin(yAngle / PI_180);
 }
 
 // Length direction z
-float lenDirZ(float length, float xAngle, float yAngle = 90.0) {
+float zAngleLength(float length, float xAngle, float yAngle = 90.0) {
 	return length * sin(yAngle / PI_180 - PI_HALF);
 }
 
@@ -80,17 +80,17 @@ constexpr float sqr(float x) {
 }
 
 // Distance between (x1,y1) and (x2,y2)
-float pointDistance(float x1, float y1, float x2, float y2) {
+float distanceBetween(float x1, float y1, float x2, float y2) {
 	return sqrt(sqr(x2 - x1) + sqr(y2 - y1));
 }
 
 // Distance between (x1,y1,z1) and (x2,y2,z2)
-float pointDistance(float x1, float y1, float z1, float x2, float y2, float z2) {
+float distanceBetween(float x1, float y1, float z1, float x2, float y2, float z2) {
 	return sqrt(sqr(x2 - x1) + sqr(y2 - y1) + sqr(z2 - z1));
 }
 
 // Horizontal direction from (x1,y1) to (x2,y2)
-float pointDirection(float x1, float y1, float x2, float y2) {
+float angleBetween(float x1, float y1, float x2, float y2) {
 	float xx = x2 - x1;
 	if (xx != 0.0) {
 		float direction = atan((y2 - y1) / xx) * PI_180;
@@ -109,8 +109,8 @@ float pointDirection(float x1, float y1, float x2, float y2) {
 }
 
 // Vertical direction from (x1,y1,z1) to (x2,y2,z2)
-float pointDirection(float x1, float y1, float z1, float x2, float y2, float z2) {
-	float distance = pointDistance(x1, y1, x2, y2);
+float angleBetween(float x1, float y1, float z1, float x2, float y2, float z2) {
+	float distance = angleBetween(x1, y1, x2, y2);
 
 	if (distance != 0.0) return atan((z2 - z1) / distance) * PI_180 + (float)90.0;
 	if (z1 < z2) return 180.0;

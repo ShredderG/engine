@@ -1,36 +1,32 @@
 // Keyboard
-class Keyboard {
-private:
-	static const int KEYS_COUNT = 256;
-	uchar lastPressedKey_;
-
-	friend LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-
-public:
+namespace Keyboard {
+	constexpr int KEYS_COUNT = 256;
 	bool isReleased[KEYS_COUNT];
 	bool isPressed[KEYS_COUNT];
 	bool isHeld[KEYS_COUNT];
-
-	Keyboard() {
-		memset(isHeld, false, KEYS_COUNT);
-		reset();
-	}
+	uchar lastPressedKey;
 
 	// Reset keyboard status
 	void reset() {
 		memset(isReleased, false, KEYS_COUNT);
-		memset(isPressed,  false, KEYS_COUNT);
-		lastPressedKey_ = 0;
+		memset(isPressed, false, KEYS_COUNT);
+		lastPressedKey = 0;
+	}
+
+	// Initialize
+	void initialize() {
+		memset(isHeld, false, KEYS_COUNT);
+		reset();
 	}
 
 	// Get last pressed key
 	uchar getLastPressedKey() {
-		if (lastPressedKey_ >= 'A' && lastPressedKey_ <= 'Z') {
-			return isHeld[VK_SHIFT] ? lastPressedKey_ : tolower(lastPressedKey_);
+		if (lastPressedKey >= 'A' && lastPressedKey <= 'Z') {
+			return isHeld[VK_SHIFT] ? lastPressedKey : tolower(lastPressedKey);
 		}
 
 		if (!isHeld[VK_SHIFT]) {
-			switch (lastPressedKey_) {
+			switch (lastPressedKey) {
 			case '0':
 			case '1':
 			case '2':
@@ -41,7 +37,7 @@ public:
 			case '7':
 			case '8':
 			case '9':
-				return lastPressedKey_;
+				return lastPressedKey;
 
 			case VK_OEM_1:      return ';';
 			case VK_OEM_PLUS:   return '=';
@@ -57,7 +53,7 @@ public:
 			case VK_OEM_7: return '\'';			
 			}
 		} else {
-			switch (lastPressedKey_) {
+			switch (lastPressedKey) {
 			case '0': return ')';
 			case '1': return '!';
 			case '2': return '@';
@@ -84,6 +80,6 @@ public:
 			}
 		}
 
-		return (lastPressedKey_ == ' ') ? ' ' : 0;
+		return (lastPressedKey == ' ') ? ' ' : 0;
 	}
-} keyboard;
+}

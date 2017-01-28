@@ -1,9 +1,6 @@
 // Prototype WndProc
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
-// Prototype draw
-namespace Engine { void draw(); }
-
 // glew Functions
 PFNGLCREATEPROGRAMPROC           gl_CreateProgram;
 PFNGLDELETEPROGRAMPROC           gl_DeleteProgram;
@@ -43,16 +40,12 @@ PFNGLFRAMEBUFFERTEXTURE2DPROC    gl_FramebufferTexture2D;
 PFNGLCHECKFRAMEBUFFERSTATUSPROC  gl_CheckFramebufferStatus;
 PFNGLDELETEFRAMEBUFFERSPROC      gl_DeleteFramebuffers;
 
-class Window {
-private:
+namespace Window {
 	HGLRC     hRC       = nullptr; // Постоянный контекст рендеринга
 	HDC       hDC       = nullptr; // Приватный контекст устройства GDI
 	HWND      hWnd      = nullptr; // Здесь будет хранится дескриптор окна
 	HINSTANCE hInstance = nullptr; // Здесь будет хранится дескриптор приложения
-
-	friend void Engine::draw();
-
-public:
+	
 	int x;
 	int y;
 	int width;
@@ -85,7 +78,7 @@ public:
 		glLoadIdentity();
 
 		// Calculate window aspect ratio
-		gluPerspective(camera.fov, (float)width / height, camera.zNear, camera.zFar);
+		gluPerspective(Camera::fov, (float)width / height, Camera::zNear, Camera::zFar);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 	}
@@ -93,21 +86,28 @@ public:
 	// Initialization
 	void initialize() {
 		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClearDepth(1.0);
+
+		// vsync
+		//typedef BOOL(WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
+		//((PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT"))(1);
 
 		glShadeModel(GL_SMOOTH);
 		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_ALPHA_TEST);
-		glEnable(GL_CULL_FACE);
+
 		glPolygonMode(GL_BACK, GL_LINE);
+		glEnable(GL_CULL_FACE);
 
 		glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glAlphaFunc(GL_GREATER, (float)0.01);
 
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LEQUAL);
-		glClearDepth(1.0);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
+
+		glAlphaFunc(GL_GREATER, (float)0.01);
+		glEnable(GL_ALPHA_TEST);
+
+		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_DEPTH_TEST);
 
 		// glew functions
 		gl_CreateProgram           = (PFNGLCREATEPROGRAMPROC)           wglGetProcAddress("glCreateProgram");
@@ -149,15 +149,9 @@ public:
 		gl_DeleteFramebuffers      = (PFNGLDELETEFRAMEBUFFERSPROC)      wglGetProcAddress("glDeleteFramebuffers");
 	}
 
-	// Change window mode
-	void changeFullscreen() {
-		destroy();
-		create(title, !isFullscreen, x, y, width, height);
-	}
-
 	// Set title
 	void setTitle(string title) {
-		this->title = title;
+		Window::title = title;
 		SetWindowText(hWnd, title.c_str());
 	}
 
@@ -194,12 +188,12 @@ public:
 
 	// Create
 	bool create(string title, bool fullscreen, int x, int y, int width, int height) {
-		this->title        = title;
-		this->isFullscreen = fullscreen;
-		this->x            = x;
-		this->y            = y;
-		this->width        = width;
-		this->height       = height;
+		Window::title        = title;
+		Window::isFullscreen = fullscreen;
+		Window::x            = x;
+		Window::y            = y;
+		Window::width        = width;
+		Window::height       = height;
 		if (isFullscreen) {
 			x = y = 0;
 		}
@@ -307,7 +301,13 @@ public:
 		destroy();
 		return false;
 	}
-} window;
+
+	// Change window mode
+	void changeFullscreen() {
+		destroy();
+		create(title, !isFullscreen, x, y, width, height);
+	}
+}
 
 // Window procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -315,62 +315,64 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
 		// Key pressed
 	case WM_KEYDOWN:
-		keyboard.isHeld[keyboard.lastPressedKey_ = wParam] = keyboard.isPressed[wParam] = true;
+		if (!Keyboard::isHeld[Keyboard::lastPressedKey = wParam]) {
+			Keyboard::isHeld[wParam] = Keyboard::isPressed[wParam] = true;
+		}
 		return 0;
 
 		// Key released
 	case WM_KEYUP:
-		keyboard.isHeld[wParam]     = false;
-		keyboard.isReleased[wParam] = true;
+		Keyboard::isHeld[wParam]     = false;
+		Keyboard::isReleased[wParam] = true;
 		return 0;
 
 		// Mouse moved
 	case WM_MOUSEMOVE:
-		mouse.x = LOWORD(lParam);
-		mouse.y = HIWORD(lParam);
+		Mouse::x = LOWORD(lParam);
+		Mouse::y = HIWORD(lParam);
 		return 0;
 
 		// Mouse wheel rotated
 	case WM_MOUSEWHEEL:
-		mouse.isWheelRotated[HIWORD(wParam) == WHEEL_DELTA ? MOUSE_WHEEL_UP : MOUSE_WHEEL_DOWN] = true;
+		Mouse::isWheelRotated[HIWORD(wParam) == WHEEL_DELTA ? MOUSE_WHEEL_UP : MOUSE_WHEEL_DOWN] = true;
 		return 0;
 
 		// Left mouse button pressed
 	case WM_LBUTTONDOWN:
-		mouse.isHeld[MOUSE_LEFT] = mouse.isPressed[MOUSE_LEFT] = true;
+		Mouse::isHeld[MOUSE_LEFT] = Mouse::isPressed[MOUSE_LEFT] = true;
 		return 0;
 
 		// Right mouse button pressed
 	case WM_RBUTTONDOWN:
-		mouse.isHeld[MOUSE_RIGHT] = mouse.isPressed[MOUSE_RIGHT] = true;
+		Mouse::isHeld[MOUSE_RIGHT] = Mouse::isPressed[MOUSE_RIGHT] = true;
 		return 0;
 
 		// Middle mouse button pressed
 	case WM_MBUTTONDOWN:
-		mouse.isHeld[MOUSE_MIDDLE] = mouse.isPressed[MOUSE_MIDDLE] = true;
+		Mouse::isHeld[MOUSE_MIDDLE] = Mouse::isPressed[MOUSE_MIDDLE] = true;
 		return 0;
 
 		// Left mouse button released
 	case WM_LBUTTONUP:
-		mouse.isHeld[MOUSE_LEFT]     = false;
-		mouse.isReleased[MOUSE_LEFT] = true;
+		Mouse::isHeld[MOUSE_LEFT]     = false;
+		Mouse::isReleased[MOUSE_LEFT] = true;
 		return 0;
 
 		// Right mouse button released
 	case WM_RBUTTONUP:
-		mouse.isHeld[MOUSE_RIGHT]     = false;
-		mouse.isReleased[MOUSE_RIGHT] = true;
+		Mouse::isHeld[MOUSE_RIGHT]     = false;
+		Mouse::isReleased[MOUSE_RIGHT] = true;
 		return 0;
 
 		// Middle mouse button released
 	case WM_MBUTTONUP:
-		mouse.isHeld[MOUSE_MIDDLE]     = false;
-		mouse.isReleased[MOUSE_MIDDLE] = true;
+		Mouse::isHeld[MOUSE_MIDDLE]     = false;
+		Mouse::isReleased[MOUSE_MIDDLE] = true;
 		return 0;
 
 		// Window focus
 	case WM_ACTIVATE:
-		window.hasFocus = !HIWORD(wParam);
+		Window::hasFocus = !HIWORD(wParam);
 		return 0;
 
 		// System command
@@ -381,15 +383,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 		// Window resized
 	case WM_SIZE:
-		window.width  = LOWORD(lParam);
-		window.height = HIWORD(lParam);
-		window.update(window.width, window.height);
+		Window::width  = LOWORD(lParam);
+		Window::height = HIWORD(lParam);
+		Window::update(Window::width, Window::height);
 		return 0;
 
 		// Window moved
 	case WM_MOVE:
-		window.x = LOWORD(lParam);
-		window.y = HIWORD(lParam);
+		Window::x = LOWORD(lParam);
+		Window::y = HIWORD(lParam);
 		return 0;
 
 		// Window close

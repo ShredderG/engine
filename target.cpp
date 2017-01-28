@@ -69,13 +69,13 @@ public:
 
 	// Bind frame buffer uint
 	void operator = (uint frameBuffer) {
-		window.update(window.width, window.height);
+		Window::update(Window::width, Window::height);
 		gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, this->frameBuffer = frameBuffer);
 	}
 
 	// Bind frame buffer Target
 	void operator = (Target &target) {
-		window.update(target.width, target.height);
+		Window::update(target.width, target.height);
 		gl_BindFramebuffer(GL_FRAMEBUFFER_EXT, frameBuffer = target.frameBuffer);
 		y1         = target.y1;
 		x2         = target.x2;

@@ -10,8 +10,7 @@ enum MouseButton : uchar {
 };
 
 // Mouse
-class Mouse {
-public:
+namespace Mouse {
 	int  x;
 	int  y;
 	bool isReleased[3];
@@ -19,25 +18,19 @@ public:
 	bool isHeld[3];
 	bool isWheelRotated[2];
 	bool isVisible;
-	bool isOutside;
-	
-	Mouse() : isOutside(false) {
-		memset(isHeld, false, 3);
-		reset();
+	bool isOutside = false;
 
-#if GAME_MOUSE == true
-		show();
-#else
-		hide();
-#endif
+	// Reset buttons status
+	void reset() {
+		memset(isPressed, false, 3);
+		memset(isReleased, false, 3);
+		isWheelRotated[MOUSE_WHEEL_UP] = isWheelRotated[MOUSE_WHEEL_DOWN] = false;
 	}
-
+	
 	// Move mouse
-	void move(int _x, int _y) {
+	void move(int x, int y) {
 		if (GetActiveWindow()) {
-			POINT point;
-			GetCursorPos(&point);
-			SetCursorPos(point.x - x + _x, point.y - y + _y);
+			SetCursorPos(x, y);
 		}
 	}
 
@@ -53,10 +46,15 @@ public:
 		isVisible = false;
 	}
 
-	// Reset buttons status
-	void reset() {
-		memset(isPressed,  false, 3);
-		memset(isReleased, false, 3);
-		isWheelRotated[MOUSE_WHEEL_UP] = isWheelRotated[MOUSE_WHEEL_DOWN] = false;
+	// Initialize
+	void initialize() {
+		memset(isHeld, false, 3);
+		reset();
+
+#if GAME_MOUSE == true
+		show();
+#else
+		hide();
+#endif
 	}
-} mouse;
+}

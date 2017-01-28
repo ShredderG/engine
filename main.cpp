@@ -39,62 +39,70 @@ typedef unsigned int   uint;
 
 // Main function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+	// Initialize everything
+	Display::initialize();
+	Keyboard::initialize();
+	Mouse::initialize();
+	Winsock::initialize();
+	
 	// Create window
-	if (!window.create(GAME_TITLE, GAME_FULL,
-		(display.width  - GAME_WIDTH)  / 2,
-		(display.height - GAME_HEIGHT) / 2,
+	if (Window::create(GAME_TITLE, GAME_FULL,
+		(Display::width  - GAME_WIDTH)  / 2,
+		(Display::height - GAME_HEIGHT) / 2,
 		GAME_WIDTH, GAME_HEIGHT)) {
-		return 0;
+		// Seed random generator
+		srand((unsigned)time(nullptr));
+		
+		// Load textures
+		Engine::loadTextures();
+		
+		// Load room
+		room = GAME_ROOM;
+		
+		// Variables
+		constexpr float timeForFrame = (float)1000.0 / GAME_FPS;
+		int frame       = 0;
+		int timeCurrent = clock();
+		int timeStart   = timeCurrent;
+		int timeEnd     = timeStart + 1000;
+		int timeSleep;
+		MSG msg;
+
+		// Main cycle
+		while (Engine::game) {
+			// Retrieve message
+			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+
+			// Do frame tick
+			Engine::step();
+			if (!room.doTransition()) {
+				Engine::draw();
+			}
+
+			// Wait some mseconds if needed
+			if ((timeSleep = timeStart + timeForFrame * ++frame - (timeCurrent = clock())) > 0) {
+				timeCurrent += timeSleep;
+				Sleep(timeSleep);
+			}
+
+			// Check FPS
+			if (timeEnd <= timeCurrent) {
+				Engine::fps = frame;
+				frame       = 0;
+				timeStart   = timeCurrent;
+				timeEnd     = timeCurrent + 1000;
+			}
+		}
+
+		// App end
+		Engine::deleteObjects();
+		Engine::unloadTextures();
+		Window::destroy();
 	}
 
-	// Seed random generator
-	srand((unsigned)time(nullptr));
-
-	// Load textures, shader, room
-	Engine::loadTextures();
-	room = r_start;
-
-	// Variables
-	constexpr float timeForFrame = (float)1000.0 / GAME_FPS;
-	int frame       = 0;
-	int timeCurrent = clock();
-	int timeStart   = timeCurrent;
-	int timeEnd     = timeStart + 1000;
-	int timeSleep;
-	MSG msg;
-
-	// Main cycle
-	while (Engine::game) {
-		// Retrieve message
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-
-		// Do frame tick
-		Engine::step();
-		if (!room.doTransition()) {
-			Engine::draw();
-		}
-
-		// Wait some mseconds if needed
-		if ((timeSleep = timeStart + int(timeForFrame * ++frame) - (timeCurrent = clock())) > 0) {
-			timeCurrent += timeSleep;
-			Sleep(timeSleep);
-		}
-
-		// Check FPS
-		if (timeEnd <= timeCurrent) {
-			Engine::fps = frame;
-			frame       = 0;
-			timeStart   = timeCurrent;
-			timeEnd     = timeCurrent + 1000;
-		}
-	}
-
-	// App end
-	Engine::deleteObjects();
-	Engine::unloadTextures();
-	window.destroy();
+	WSACleanup();
 	return 0;
 }

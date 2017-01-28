@@ -1,31 +1,26 @@
 // Camera
-class Camera {
-public:
-	float x;
-	float y;
-	float z;
-	float xAngle;
-	float yAngle;
-	float zAngle;
-	float zNear;
-	float zFar;
-	float fov;
+namespace Camera {
+	float x      = 0.0;
+	float y      = 0.0;
+	float z      = 0.0;
+	float xAngle = 0.0;
+	float yAngle = 0.0;
+	float zAngle = 0.0;
+	float zNear  = 0.01;
+	float zFar   = 512.0;
+	float fov    = 60.0;
 
-	Camera() :
-		x(0.0),
-		y(0.0),
-		z(0.0),
-		xAngle(0.0),
-		yAngle(0.0),
-		zAngle(0.0),
-		zNear(0.5),
-		zFar(512.0),
-		fov(60.0) {
-		// nothing here
+	// Rotate world
+	void update() {
+		glLoadIdentity();
+		glRotatef(-yAngle, 1.0, 0.0, 0.0);
+		glRotatef(-zAngle, 0.0, 1.0, 0.0);
+		glRotatef(-xAngle, 0.0, 0.0, 1.0);
+		glTranslatef(-x, -y, -z);
 	}
 
 	// Set camera state
-	void set(float _x, float _y, float _z, float _xAngle, float _yAngle, float _zAngle) {
+	void set(float _x, float _y, float _z, float _xAngle, float _yAngle = 90.0, float _zAngle = 0.0) {
 		while (_xAngle >= 360.0) _xAngle -= 360.0;
 		while (_yAngle >= 360.0) _yAngle -= 360.0;
 		while (_zAngle >= 360.0) _zAngle -= 360.0;
@@ -41,15 +36,6 @@ public:
 		zAngle = _zAngle;
 
 		update();
-	}
-
-	// Rotate world
-	void update() {
-		glLoadIdentity();
-		glRotatef(-yAngle, 1.0, 0.0, 0.0);
-		glRotatef(-zAngle, 0.0, 1.0, 0.0);
-		glRotatef(-xAngle, 0.0, 0.0, 1.0);
-		glTranslatef(-x, -y, -z);
 	}
 
 	// 2d mode
@@ -71,4 +57,4 @@ public:
 		glLoadIdentity();
 		update();
 	}
-} camera;
+}

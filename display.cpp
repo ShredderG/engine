@@ -1,12 +1,10 @@
 // Display
-class Display {
-public:
+namespace Display {
 	int width;
 	int height;
 
-	Display() :
-		width(GetSystemMetrics(SM_CXSCREEN)),
-		height(GetSystemMetrics(SM_CYSCREEN)) {
-		// nothing here
+	void initialize() {
+		width  = GetSystemMetrics(SM_CXSCREEN);
+		height = GetSystemMetrics(SM_CYSCREEN);
 	}
-} display;
+}

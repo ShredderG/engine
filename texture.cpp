@@ -85,14 +85,6 @@ public:
 		delete[] y2;
 	}
 
-	bool operator == (Texture &tex) {
-		return id_ == tex.id_;
-	}
-
-	bool operator != (Texture &tex) {
-		return id_ != tex.id_;
-	}
-
 	void operator = (Texture &tex) {
 		if (id_ != tex.id_) {
 			x1 = tex.x1;
